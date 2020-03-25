@@ -23929,7 +23929,7 @@ rm -f core conftest.err conftest.$ac_objext \
        done
      done
      if test "$ac_success" = "no" ; then
-       ac_cv_hsl_namemangling=unknown
+       ac_cv_hsl_namemangling="lower case, underscore, no extra underscore"
      fi
      LIBS=$ac_save_LIBS
 fi
