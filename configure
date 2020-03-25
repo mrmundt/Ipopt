@@ -23983,7 +23983,7 @@ $as_echo "$ac_cv_hsl_namemangling" >&6; }
  ;;
    *)
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING (HSL): Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&5
-$as_echo "$as_me: WARNING: Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&2;}
+$as_echo "$as_me: WARNING (HSL): Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&2;}
       ;;
   esac
 
