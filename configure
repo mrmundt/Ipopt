@@ -23982,7 +23982,7 @@ $as_echo "$ac_cv_hsl_namemangling" >&6; }
       $as_echo "#define IPOPT_HSL_FUNC_(name,NAME) NAME ## __" >>confdefs.h
  ;;
    *)
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING (HSL): Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&5
 $as_echo "$as_me: WARNING: Unsupported or unknown name-mangling scheme: $ac_cv_hsl_namemangling" >&2;}
       ;;
   esac
@@ -29485,4 +29485,3 @@ fi
   #AC_MSG_NOTICE([In case of trouble, first consult the troubleshooting page at https://projects.coin-or.org/BuildTools/wiki/user-troubleshooting])
   { $as_echo "$as_me:${as_lineno-$LINENO}: Configuration of $PACKAGE_NAME successful" >&5
 $as_echo "$as_me: Configuration of $PACKAGE_NAME successful" >&6;}
-
