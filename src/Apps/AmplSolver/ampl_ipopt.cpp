@@ -12,18 +12,7 @@
 #include "IpoptConfig.h"
 
 # include <cstring>
-
-
-// for printf
-#ifdef HAVE_CSTDIO
 # include <cstdio>
-#else
-# ifdef HAVE_STDIO_H
-#  include <stdio.h>
-# else
-#  error "don't have header file for stdio"
-# endif
-#endif
 
 int main(int argc, char**args)
 {
