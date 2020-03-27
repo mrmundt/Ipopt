@@ -10,15 +10,9 @@
 #include "IpIpoptApplication.hpp"
 
 #include "IpoptConfig.h"
-#ifdef HAVE_CSTRING
+
 # include <cstring>
-#else
-# ifdef HAVE_STRING_H
-#  include <string.h>
-# else
-#  error "don't have header file for string"
-# endif
-#endif
+
 
 // for printf
 #ifdef HAVE_CSTDIO
@@ -100,5 +94,3 @@ int main(int argc, char**args)
 
   return 0;
 }
-
-
