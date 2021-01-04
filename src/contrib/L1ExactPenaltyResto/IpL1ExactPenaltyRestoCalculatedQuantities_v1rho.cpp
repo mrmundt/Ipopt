@@ -55,6 +55,12 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         dampind_x_u_l1_(NULL),
         dampind_s_L_l1_(NULL),
         dampind_s_U_l1_(NULL),
+
+
+
+
+
+
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ",
                    dbg_verbosity);
@@ -1048,8 +1054,623 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
     return result;
 }
 
+SmartPtr<Vector> L1ExactPenaltyRestoCQ::CalcComplL1(
+        const Vector& slack,
+        const Vector& mult,
+)
+{
+    // It turns out this has to be the same :( .
+    DBG_START_METH("L1ExactPenaltyRestoCQ::CalcComplL1()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result = slack.MakeNew();
+    result->Copy(slack);
+    result->ElementWiseMultiply(mult);
+    return result;
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_compl_x_L()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_compl_x_L()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_x_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->z_L();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<const TaggedObject> tdeps(2);
+
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    DBG_PRINT_VECTOR(2, "slack_x_L", *slack);
+    DBG_PRINT_VECTOR(2, "z_L", *mult);
+
+    if( !curr_compl_x_L_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        if (L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            CompoundVector* cr = static_cast<CompoundVector*>(GetRawPtr(result));
+            SmartPtr<Vector> r_x_only = cr->GetCompNonConst(0);
+            r_x_only->Scal(1/rho);
+        }
+        curr_compl_x_L_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return ConstPtr(result);
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_compl_x_L()
+{   // As opposed to curr_compl_x_L this does not depend on rho.
+    DBG_START_METH("L1ExactPenaltyRestoCQ::trial_compl_x_L()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = trial_slack_x_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->trial()->z_L();
+    DBG_PRINT_VECTOR(2, "slack_x_L", *slack);
+    DBG_PRINT_VECTOR(2, "z_L", *mult);
+    // can't depend on rho.
+    if( !trial_compl_x_L_cache_l1_.GetCachedResult2Dep(result, *slack, *mult) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        trial_compl_x_L_cache_l1_.AddCachedResult2Dep(result, *slack, *mult);
+    }
+    return ConstPtr(result);
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_compl_x_U()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_compl_x_U()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_x_U();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->z_U();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<const TaggedObject> tdeps(2);
+
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    if( !curr_compl_x_U_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        if (L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            CompoundVector* cr = static_cast<CompoundVector*>(GetRawPtr(result));
+            SmartPtr<Vector> r_x_only = cr->GetCompNonConst(0);
+            r_x_only->Scal(1/rho);
+        }
+        curr_compl_x_U_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return ConstPtr(result);
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_compl_x_U()
+{   // As opposed to curr_compl_x_U this does not depend on rho.
+    DBG_START_METH("L1ExactPenaltyRestoCQ::trial_compl_x_U()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = trial_slack_x_U();
+    SmartPtr<const Vector> mult = ip_data_l1_->trial()->z_U();
+
+    if( !trial_compl_x_U_cache_l1_.GetCachedResult2Dep(result, *slack, *mult) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        trial_compl_x_U_cache_l1_.AddCachedResult2Dep(result, *slack, *mult);
+    }
+    return ConstPtr(result);
+}
 
 
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_compl_s_L()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_compl_s_L()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_s_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->v_L();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<const TaggedObject> tdeps(2);
+
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    if( !curr_compl_s_L_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        if (L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            result->Scal(1/rho);
+        }
+        curr_compl_s_L_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return ConstPtr(result);
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_compl_s_L()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::trial_compl_s_L()",
+                   dbg_verbosity);
+    SmartPtr<Vector> result;
+
+    SmartPtr<const Vector> slack = trial_slack_s_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->trial()->v_L();
+
+    if( !trial_compl_s_L_cache_l1_.GetCachedResult2Dep(result, *slack, *mult) )
+    {
+        result = CalcComplL1(*slack, *mult);
+        trial_compl_s_L_cache_l1_.AddCachedResult2Dep(result, *slack, *mult);
+    }
+    return ConstPtr(result);
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_relaxed_compl_x_L()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_relaxed_compl_x_L()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_x_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->z_L();
+    std::vector<const TaggedObject*> tdeps(2);
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    Number mu = ip_data_l1_->curr_mu();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(2);
+    sdeps[0] = mu;
+    sdeps[1] = rho;
+
+    if( !curr_relaxed_compl_x_L_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        SmartPtr<Vector> tmp = slack->MakeNew();
+        tmp->Copy(*curr_compl_x_L());
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            SmartPtr<Vector> tmp2 = slack->MakeNew();
+            tmp2->Set(mu);
+            CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+            SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+            tmp2_x_only->Scal(1/rho);
+            tmp->Axpy(-1, tmp2);
+        } else {
+            tmp->AddScalar(-mu);
+        }
+
+        result = ConstPtr(tmp);
+        curr_relaxed_compl_x_L_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return result;
+}
+
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_relaxed_compl_x_U()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_relaxed_compl_x_U()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_x_U();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->z_U();
+    std::vector<const TaggedObject*> tdeps(2);
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    Number mu = ip_data_l1_->curr_mu();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(2);
+    sdeps[0] = mu;
+    sdeps[1] = rho;
+
+    if( !curr_relaxed_compl_x_U_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        SmartPtr<Vector> tmp = slack->MakeNew();
+        tmp->Copy(*curr_compl_x_U());
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            SmartPtr<Vector> tmp2 = slack->MakeNew();
+            tmp2->Set(mu);
+            CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+            SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+            tmp2_x_only->Scal(1/rho);
+            tmp->Axpy(-1, tmp2);
+        } else {
+            tmp->AddScalar(-mu);
+        }
+
+        result = ConstPtr(tmp);
+        curr_relaxed_compl_x_U_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return result;
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_relaxed_compl_s_L()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_relaxed_compl_s_L()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_s_L();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->v_L();
+    std::vector<const TaggedObject*> tdeps(2);
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    Number mu = ip_data_l1_->curr_mu();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(2);
+    sdeps[0] = mu;
+    sdeps[1] = rho;
+
+    if( !curr_relaxed_compl_s_L_cached_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        SmartPtr<Vector> tmp = slack->MakeNew();
+        tmp->Copy(*curr_compl_s_L());
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            tmp->AddScalar(-mu/rho);
+        } else {
+            tmp->AddScalar(-mu);
+        }
+
+        result = ConstPtr(tmp);
+        curr_relaxed_compl_s_L_cached_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return result;
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_relaxed_compl_s_U()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_relaxed_compl_s_U()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+
+    SmartPtr<const Vector> slack = curr_slack_s_U();
+    SmartPtr<const Vector> mult = ip_data_l1_->curr()->v_U();
+    std::vector<const TaggedObject*> tdeps(2);
+    tdeps[0] = GetRawPtr(slack);
+    tdeps[1] = GetRawPtr(mult);
+
+    Number mu = ip_data_l1_->curr_mu();
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(2);
+    sdeps[0] = mu;
+    sdeps[1] = rho;
+
+    if( !curr_relaxed_compl_s_U_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        SmartPtr<Vector> tmp = slack->MakeNew();
+        tmp->Copy(*curr_compl_s_U());
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            tmp->AddScalar(-mu/rho);
+        } else {
+            tmp->AddScalar(-mu);
+        }
+
+        result = ConstPtr(tmp);
+        curr_relaxed_compl_s_U_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+    return result;
+}
+
+Number L1ExactPenaltyRestoCQ::curr_complementarity(
+        Number    mu,
+        ENormType NormType
+)
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_complementarity()",
+                   dbg_verbosity);
+    Number result;
+
+    SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
+    SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
+    SmartPtr<const Vector> z_L = ip_data_l1_->curr()->z_L();
+    SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
+    SmartPtr<const Vector> v_L = ip_data_l1_->curr()->v_L();
+    SmartPtr<const Vector> v_U = ip_data_l1_->curr()->v_U();
+
+    std::vector<const TaggedObject*> deps(6);
+    deps[0] = GetRawPtr(x);
+    deps[1] = GetRawPtr(s);
+    deps[2] = GetRawPtr(z_L);
+    deps[3] = GetRawPtr(z_U);
+    deps[4] = GetRawPtr(v_L);
+    deps[5] = GetRawPtr(v_U);
+
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(3);
+    sdeps[0] = (Number) NormType;
+    sdeps[1] = mu;
+    sdeps[2] = rho;
+
+    if( !curr_complementarity_cache_l1_.GetCachedResult(result, deps, sdeps) )
+    {
+        if( !trial_complementarity_cache_l1_.GetCachedResult(result, deps, sdeps) )
+        {
+
+            std::vector<SmartPtr<const Vector> > vecs(4);
+            SmartPtr<const Vector> compl_x_L = curr_compl_x_L();
+            SmartPtr<const Vector> compl_x_U = curr_compl_x_U();
+            SmartPtr<const Vector> compl_s_L = curr_compl_s_L();
+            SmartPtr<const Vector> compl_s_U = curr_compl_s_U();
+
+            if( mu == .0 )
+            {
+                vecs[0] = GetRawPtr(compl_x_L);
+                vecs[1] = GetRawPtr(compl_x_U);
+                vecs[2] = GetRawPtr(compl_s_L);
+                vecs[3] = GetRawPtr(compl_s_U);
+            }
+            else
+            {
+                SmartPtr<Vector> tmp = compl_x_L->MakeNew();
+                tmp->Copy(*compl_x_L);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    SmartPtr<Vector> tmp2 = compl_x_L->MakeNew();
+                    tmp2->Set(mu);
+                    CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+                    SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+                    tmp2_x_only->Scal(1/rho);
+                    tmp->Axpy(-1, tmp2);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+                vecs[0] = GetRawPtr(tmp);
+                tmp = compl_x_U->MakeNew();
+                tmp->Copy(*compl_x_U);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    SmartPtr<Vector> tmp2 = compl_x_U->MakeNew();
+                    tmp2->Set(mu);
+                    CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+                    SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+                    tmp2_x_only->Scal(1/rho);
+                    tmp->Axpy(-1, tmp2);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+
+                vecs[1] = GetRawPtr(tmp);
+                tmp = compl_s_L->MakeNew();
+                tmp->Copy(*compl_s_L);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    tmp->AddScalar(-mu/rho);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+
+                vecs[2] = GetRawPtr(tmp);
+                tmp = compl_s_U->MakeNew();
+                tmp->Copy(*compl_s_U);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    tmp->AddScalar(-mu/rho);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+
+                vecs[3] = GetRawPtr(tmp);
+            }
+
+            result = CalcNormOfType(NormType, vecs);
+        }
+
+        curr_complementarity_cache_l1_.AddCachedResult(result, deps, sdeps);
+    }
+
+    return result;
+}
+
+Number L1ExactPenaltyRestoCQ::trial_complementarity(
+        Number    mu,
+        ENormType NormType
+)
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::trial_complementarity()",
+                   dbg_verbosity);
+    Number result;
+
+    SmartPtr<const Vector> x = ip_data_l1_->trial()->x();
+    SmartPtr<const Vector> s = ip_data_l1_->trial()->s();
+    SmartPtr<const Vector> z_L = ip_data_l1_->trial()->z_L();
+    SmartPtr<const Vector> z_U = ip_data_l1_->trial()->z_U();
+    SmartPtr<const Vector> v_L = ip_data_l1_->trial()->v_L();
+    SmartPtr<const Vector> v_U = ip_data_l1_->trial()->v_U();
+
+    std::vector<const TaggedObject*> deps(6);
+    deps[0] = GetRawPtr(x);
+    deps[1] = GetRawPtr(s);
+    deps[2] = GetRawPtr(z_L);
+    deps[3] = GetRawPtr(z_U);
+    deps[4] = GetRawPtr(v_L);
+    deps[5] = GetRawPtr(v_U);
+
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(3);
+    sdeps[0] = (Number) NormType;
+    sdeps[1] = mu;
+    sdeps[2] = rho;
+
+    if( !trial_complementarity_cache_l1_.GetCachedResult(result, deps, sdeps) )
+    {
+        if( !curr_complementarity_cache_l1_.GetCachedResult(result, deps, sdeps) )
+        {
+
+            std::vector<SmartPtr<const Vector> > vecs(4);
+            SmartPtr<const Vector> compl_x_L = trial_compl_x_L();
+            SmartPtr<const Vector> compl_x_U = trial_compl_x_U();
+            SmartPtr<const Vector> compl_s_L = trial_compl_s_L();
+            SmartPtr<const Vector> compl_s_U = trial_compl_s_U();
+
+            if( mu == .0 )
+            {
+                vecs[0] = GetRawPtr(compl_x_L);
+                vecs[1] = GetRawPtr(compl_x_U);
+                vecs[2] = GetRawPtr(compl_s_L);
+                vecs[3] = GetRawPtr(compl_s_U);
+            }
+            else
+            {
+                SmartPtr<Vector> tmp = compl_x_L->MakeNew();
+                tmp->Copy(*compl_x_L);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    SmartPtr<Vector> tmp2 = compl_x_L->MakeNew();
+                    tmp2->Set(mu);
+                    CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+                    SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+                    tmp2_x_only->Scal(1/rho);
+                    tmp->Axpy(-1, tmp2);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+
+                vecs[0] = GetRawPtr(tmp);
+                tmp = compl_x_U->MakeNew();
+                tmp->Copy(*compl_x_U);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    SmartPtr<Vector> tmp2 = compl_x_U->MakeNew();
+                    tmp2->Set(mu);
+                    CompoundVector* ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+                    SmartPtr<Vector> tmp2_x_only = ctmp2->GetCompNonConst(0);
+                    tmp2_x_only->Scal(1/rho);
+                    tmp->Axpy(-1, tmp2);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+                vecs[1] = GetRawPtr(tmp);
+                tmp = compl_s_L->MakeNew();
+                tmp->Copy(*compl_s_L);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    tmp->AddScalar(-mu/rho);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+                vecs[2] = GetRawPtr(tmp);
+                tmp = compl_s_U->MakeNew();
+                tmp->Copy(*compl_s_U);
+                if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+                {
+                    tmp->AddScalar(-mu/rho);
+                } else {
+                    tmp->AddScalar(-mu);
+                }
+                vecs[3] = GetRawPtr(tmp);
+            }
+
+            result = CalcNormOfType(NormType, vecs);
+        }
+
+        trial_complementarity_cache_l1_.AddCachedResult(result, deps, sdeps);
+    }
+
+    return result;
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_sigma_x()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_sigma_x()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+    SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
+    SmartPtr<const Vector> z_L = ip_data_l1_1->curr()->z_L();
+    SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
+
+    std::vector<const TaggedObject*> tdeps(3);
+    tdeps[0] = GetRawPtr(x);
+    tdeps[1] = GetRawPtr(z_L);
+    tdeps[2] = GetRawPtr(z_U);
+
+
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    if( !curr_sigma_x_cache_l1_.GetCachedResult(result, sdeps, tdeps) )
+    {
+        SmartPtr<Vector> sigma = x->MakeNew();
+
+        sigma->Set(0.);
+        ip_nlp_l1_->Px_L()->AddMSinvZ(1., *curr_slack_x_L(), *z_L, *sigma);
+        ip_nlp_l1_->Px_U()->AddMSinvZ(1., *curr_slack_x_U(), *z_U, *sigma);
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            CompoundVector* csigma = static_cast<CompoundVector*>(GetRawPtr(sigma));
+            SmartPtr<Vector> sigma_x = csigma->GetCompNonConst(0);
+            sigma_x->Scal(1/rho);
+        }
+
+        DBG_PRINT_VECTOR(2, "sigma_x", *sigma);
+
+        result = ConstPtr(sigma);
+        curr_sigma_x_cache_l1_.AddCachedResult(result, sdeps, tdeps);
+    }
+
+    return result;
+}
+
+SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_sigma_s()
+{
+    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_sigma_s()",
+                   dbg_verbosity);
+    SmartPtr<const Vector> result;
+    SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
+    SmartPtr<const Vector> v_L = ip_data_l1_->curr()->v_L();
+    SmartPtr<const Vector> v_U = ip_data_l1_->curr()->v_U();
+    std::vector<TaggedObject*> tdeps(3);
+    tdeps[0] = GetRawPtr(s);
+    tdeps[1] = GetRawPtr(v_L);
+    tdeps[2] = GetRawPtr(v_U);
+
+    Number rho = L1EPRestoData().CurrentRho();
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+
+    if( !curr_sigma_s_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
+    {
+        SmartPtr<Vector> sigma = s->MakeNew();
+
+        sigma->Set(0.);
+        ip_nlp_l1_->Pd_L()->AddMSinvZ(1., *curr_slack_s_L(), *v_L, *sigma);
+        DBG_PRINT_VECTOR(2, "sigma1", *sigma);
+        ip_nlp_l1_->Pd_U()->AddMSinvZ(1., *curr_slack_s_U(), *v_U, *sigma);
+        DBG_PRINT_VECTOR(2, "sigma2", *sigma);
+
+        if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            sigma->Scal(1/rho);
+        }
+
+        result = ConstPtr(sigma);
+        curr_sigma_s_cache_l1_.AddCachedResult(result, tdeps, sdeps);
+    }
+
+    return result;
+}
 
 Number L1ExactPenaltyRestoCQ::ComputeRhoTrial() {return 1000;}
 

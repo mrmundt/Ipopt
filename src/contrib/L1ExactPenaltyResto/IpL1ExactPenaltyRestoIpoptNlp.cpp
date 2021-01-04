@@ -7,7 +7,7 @@
 
 namespace Ipopt
 {
-    IpL1ExactPenaltyRestoIpoptNLP::IpL1ExactPenaltyRestoIpoptNLP(
+    L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
             IpoptNLP &orig_ip_nlp, IpoptData &orig_ip_data,
             IpoptCalculatedQuantities &orig_ip_cq)
             : RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq)
@@ -19,15 +19,47 @@ namespace Ipopt
         RestoIpoptNLP::f_evals();
     }
 
-    IpL1ExactPenaltyRestoIpoptNLP::~IpL1ExactPenaltyRestoIpoptNLP() noexcept
+    L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
     { }
 
-    Number IpL1ExactPenaltyRestoIpoptNLP::f(
+    void L1ExactPenaltyRestoIpoptNLP::RegisterOptions(
+            SmartPtr<RegisteredOptions> roptions
+    )
+    {
+        roptions->SetRegisteringCategory("l1 Exact Penalty")
+        roptions->AddStringOption2(
+            "l1exactpenalty_objective_type",
+            "Choose where to put the rho term phi(x,rho) = f + rho ||c||1 (constraint) vs 1/rho f(x) + ||c||1",
+            "constraint",
+            "constraint", "phi(x,rho) = f(x) + rho ||c(x)||1",
+            "objective_inv", "phi(x,rho) = (1/rho) * f(x) + ||c(x)||1",
+            "long desc"
+            )
+    }
+
+    bool L1ExactPenaltyRestoIpoptNLP::Initialize(
+        const Journalist &jnlst,
+        const OptionsList& options,
+        const std::string& prefix)
+    {
+        Index l1_int;
+        options.GetEnumValue("l1exactpenalty_objective_type", l1_int, prefix);
+        l1_exact_penalty_objective_type_ = L1PenaltyObjectiveType(l1_int);
+        return IpoptNLP::Initialize(jnlst, options, prefix);
+    }
+
+    bool L1ExactPenaltyRestoIpoptNLP::l1exactpenalty_inv_objective_type() const
+    {
+        return l1_exact_penalty_objective_type_ == OBJECTIVE_INV;
+    }
+
+
+    Number L1ExactPenaltyRestoIpoptNLP::f(
             const Vector& x,
             Number        rho
             )
     {
-        DBG_START_METH("IpL1ExactPenaltyRestoIpoptNLP::f",
+        DBG_START_METH("L1ExactPenaltyRestoIpoptNLP::f",
                        dbg_verbosity);
         // fact_f * (pcTe + ncTe + pdT*e + ndT*e) + fact_c * f(x)
         Number ret = 0.0;
@@ -53,14 +85,14 @@ namespace Ipopt
         return ret;
     }
 
-    SmartPtr<const Vector> IpL1ExactPenaltyRestoIpoptNLP::grad_f(
+    SmartPtr<const Vector> L1ExactPenaltyRestoIpoptNLP::grad_f(
             const Vector &x,
             Number rho
     )
     {
         Number fact_f = 1.0;
         Number fact_c = 1.0;
-        if (l1_exact_penalty_type_ == OBJECTIVE_INV)
+        if (l1_exact_penalty_objective_type_ == OBJECTIVE_INV)
         {
             fact_f = 1/rho;
         }
@@ -86,15 +118,15 @@ namespace Ipopt
         return ConstPtr(retPtr);
     }
 
-    SmartPtr<const SymMatrix> IpL1ExactPenaltyRestoIpoptNLP::h(const Vector &x,
-                                                               Number obj_factor,
-                                                               const Vector &yc,
-                                                               const Vector &yd,
-                                                               Number rho)
+    SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::h(const Vector &x,
+                                                             Number obj_factor,
+                                                             const Vector &yc,
+                                                             const Vector &yd,
+                                                             Number rho)
     {
         Number fact_f = 1.0;
         Number fact_c = 1.0;
-        if (l1_exact_penalty_type_ == OBJECTIVE_INV)
+        if (l1_exact_penalty_objective_type_ == OBJECTIVE_INV)
         {
             fact_f = 1/rho;
         }
@@ -105,13 +137,13 @@ namespace Ipopt
 
         // Get the x_only part
         const CompoundVector* c_in = static_cast<const CompoundVector*>(&x);
-        SmartPtr<const CompoundVector> x_in = c_in->GetComp(0);
+        SmartPtr<const Vector> x_in = c_in->GetComp(0);
 
         // yc and yd (get the 0th)
         const CompoundVector* yc_c = static_cast<const CompoundVector*>(&yc);
-        SmartPtr<const CompoundVector> yc_0 = yc_c->GetComp(0);
+        SmartPtr<const Vector> yc_0 = yc_c->GetComp(0);
         const CompoundVector* yd_c = static_cast<const CompoundVector*>(&yd);
-        SmartPtr<const CompoundVector> yd_0 = yd_c->GetComp(0);
+        SmartPtr<const Vector> yd_0 = yd_c->GetComp(0);
 
         // calculate the original hessian
 
@@ -131,7 +163,7 @@ namespace Ipopt
 
     }
 
-    SmartPtr<const SymMatrix> IpL1ExactPenaltyRestoIpoptNLP::uninitialized_h()
+    SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::uninitialized_h()
     {
         SmartPtr<CompoundSymMatrix> retPtr;
         const CompoundSymMatrixSpace* h_comp_space =

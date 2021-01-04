@@ -25,4 +25,9 @@ bool L1ExactPenaltyRestoData::InitializeDataStructures() {
     rho_has_changed_ = false;
 }
 
+void L1ExactPenaltyRestoData::AcceptTrialPoint()
+{
+
+}
+
 }

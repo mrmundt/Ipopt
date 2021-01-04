@@ -9,19 +9,33 @@
 
 namespace Ipopt
 {
-class IpL1ExactPenaltyRestoIpoptNLP : public RestoIpoptNLP
+class L1ExactPenaltyRestoIpoptNLP : public RestoIpoptNLP
 {
 public:
-    IpL1ExactPenaltyRestoIpoptNLP(
+    L1ExactPenaltyRestoIpoptNLP(
             IpoptNLP&   orig_ip_nlp,
             IpoptData&  orig_ip_data,
             IpoptCalculatedQuantities&  orig_ip_cq
     );
-    ~IpL1ExactPenaltyRestoIpoptNLP() noexcept;
 
-    enum IpL1ExactPenaltyRType
-    {CONSTRAINT=0,
-     OBJECTIVE_INV};
+    ~L1ExactPenaltyRestoIpoptNLP() noexcept;
+
+    virtual bool Initialize(
+        const Journalist& jnlst;
+        const OptionsList& options,
+        const std::string& prefix
+    ) override;
+
+    static void RegisterOptions(
+        SmartPtr<RegisteredOptions> roptions
+    );
+
+    enum IpL1ExactPenaltyObjectiveType{
+        CONSTRAINT=0,
+        OBJECTIVE_INV
+    };
+
+    bool l1exactpenalty_inv_objective_type() const;
 
     Number f(const Vector &x) override;
     Number f(const Vector &x, Number rho) override;
@@ -52,8 +66,10 @@ public:
     }
 
 
+
+
 private:
-    IpL1ExactPenaltyRType l1_exact_penalty_type_;
+    IpL1ExactPenaltyObjectiveType l1_exact_penalty_objective_type_;
 };
 }
 
