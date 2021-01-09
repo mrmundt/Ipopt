@@ -7,6 +7,7 @@
 #include "IpJournalist.hpp"
 #include "IpRestoPhase.hpp"
 #include "IpOrigIpoptNLP.hpp"
+#include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
 
 
 
@@ -187,6 +188,7 @@ SolverReturn IpL1IpoptAlg::Optimize(bool isResto)
                     THROW_EXCEPTION(STEP_COMPUTATION_FAILED, "Step computation failed.");
                 }
             }
+            compute_rho_trial();
 
             IpData().TimingStats().ComputeAcceptableTrialPoint().Start();
             ComputeAcceptableTrialPoint();
@@ -363,6 +365,7 @@ void IpL1IpoptAlg::OutputIteration()
 void IpL1IpoptAlg::InitializeIterates()
 {
     bool retval = iterate_initializer_->SetInitialIterates();
+    ASSERT_EXCEPTION(retval, FAILED_INITIALIZATION, "Error while obtaining initial iterates.");
 
 }
 
@@ -375,9 +378,382 @@ void IpL1IpoptAlg::AcceptTrialPoint()
         return;
     }
 
-    Index adjusted_slack = IpCq().AdjustedTrialSlacks();
+    Index adjusted_slacks = IpCq().AdjustedTrialSlacks();
     DBG_PRINT((1, "adjusted_slack = %d\n", adjusted_slack));
+    if(adjusted_slacks > 0)
+    {
+        IpCq().ResetAdjustedTrialSlacks();
+        Jnlst().Printf(J_WARNING, J_MAIN,
+                       "In iteration %d, %d Slack too small, adjusting variable bound \n",
+                       IpData().iter_count(), adjusted_slacks);
+        if(Jnlst().ProduceOutput(J_VECTOR, J_MAIN))
+        {
+            IpNLP().x_L()->Print(Jnlst(), J_VECTOR, J_MAIN, "old_x_L");
+            IpNLP().x_U()->Print(Jnlst(), J_VECTOR, J_MAIN, "old_x_U");
+            IpNLP().d_L()->Print(Jnlst(), J_VECTOR, J_MAIN, "old_d_L");
+            IpNLP().d_U()->Print(Jnlst(), J_VECTOR, J_MAIN, "old_d_U");
+        }
+
+        SmartPtr<Vector> new_x_l = IpNLP().x_L()->MakeNew();
+        IpNLP().Px_L()->TransMultVector(1.0, *IpData().trial()->x(), 0.0, *new_x_l);
+        new_x_l->Axpy(-1.0, *IpCq().trial_slack_s_L());
+
+        SmartPtr<Vector> new_x_u = IpNLP().x_U()->MakeNew();
+        IpNLP().Px_U()->TransMultVector(1.0, *IpData().trial()->x(), 0.0, *new_x_u);
+        new_x_u->Axpy(1.0, *IpCq().trial_compl_x_U());
+
+        SmartPtr<Vector> new_d_l = IpNLP().d_L()->MakeNew();
+        IpNLP().Pd_L()->TransMultVector(1.0, *IpData().trial()->s(), 0.0, *new_d_l);
+        new_d_l->Axpy(-1.0, *IpCq().trial_slack_s_L());
+
+        SmartPtr<Vector> new_d_u = IpNLP().d_U()->MakeNew();
+        IpNLP().Pd_L()->TransMultVector(1.0, *IpData().trial()->s(), 0.0, *new_d_u);
+        new_d_u->Axpy(1.0, *IpCq().trial_slack_s_U());
+
+        IpNLP().AdjustVariableBounds(*new_x_l, *new_x_u, *new_d_l, *new_d_u);
+
+        if(Jnlst().ProduceOutput(J_VECTOR, J_MAIN))
+        {
+            IpNLP().x_L()->Print(Jnlst(), J_VECTOR, J_MAIN, "new_x_L");
+            IpNLP().x_U()->Print(Jnlst(), J_VECTOR, J_MAIN, "new_x_U");
+            IpNLP().d_L()->Print(Jnlst(), J_VECTOR, J_MAIN, "new_d_L");
+            IpNLP().d_U()->Print(Jnlst(), J_VECTOR, J_MAIN, "new_d_U");
+        }
+
+    }
+
+    bool corrected = false;
+    Number max_correction;
+    SmartPtr<const Vector> new_z_L;
+    max_correction = correct_bound_multiplier(*IpData().trial()->z_L(),
+                                              *IpCq().trial_slack_x_L(),
+                                              *IpCq().trial_compl_x_L(),
+                                              new_z_L);
+
+    if(max_correction>0.)
+    {
+        Jnlst().Printf(J_DETAILED, J_MAIN,
+                       "Some value in z_L becomes too large - maximal correction = &8.2e\n",
+                       max_correction);
+        corrected = true;
+    }
+    SmartPtr<const Vector> new_z_U;
+    max_correction = correct_bound_multiplier(*IpData().trial()->z_U(),
+                                              *IpCq().trial_slack_x_U(),
+                                              *IpCq().trial_compl_x_U(),
+                                              new_z_U);
+    if(max_correction>0.)
+    {
+        Jnlst().Printf(J_DETAILED, J_MAIN,
+                       "Some value in z_U becomes too large - maximal correction = %8.2e\n",
+                       max_correction);
+        corrected = true;
+    }
+    SmartPtr<const Vector> new_v_L;
+    max_correction = correct_bound_multiplier(*IpData().trial()->v_L(),
+                                              *IpCq().trial_slack_s_L(),
+                                              *IpCq().trial_compl_s_L(),
+                                              new_v_L);
+    if(max_correction > 0.)
+    {
+        Jnlst().Printf(J_DETAILED, J_MAIN,
+                       "Some value in v_L becomes too large - maximal correction = &8.2\n",
+                       max_correction);
+        corrected = true;
+    }
+    SmartPtr<const Vector> new_v_U;
+    max_correction = correct_bound_multiplier(*IpData().trial()->v_U(),
+                                              *IpCq().trial_slack_s_U(),
+                                              *IpCq().trial_compl_s_U(),
+                                              new_v_U);
+    if(max_correction > 0.)
+    {
+        Jnlst().Printf(J_DETAILED, J_MAIN,
+                       "Some value in v_U becomes too large - maximal correction = &8.2e\n",
+                       max_correction);
+        corrected = true;
+    }
+    SmartPtr<IteratesVector> trial = IpData().trial()->MakeNewContainer();
+    trial->Set_bound_mult(*new_z_L, *new_z_U, *new_z_L, *new_v_U);
+    IpData().set_trial(trial);
+
+    if(corrected)
+    {
+        IpData().Append_info_string("z");
+    }
+
+    IpData().AcceptTrialPoint();
+
+    if(recalc_y_){
+        if(IpData().curr()->y_c()->Dim() + IpData().curr()->y_d()->Dim() == 0)
+        {
+            recalc_y_ = false;
+        }
+    }
+
+    if(recalc_y_ && IpCq().curr_constraint_violation() < recalc_y_feas_tol_)
+    {
+        if(Jnlst().ProduceOutput(J_MOREDETAILED, J_MAIN))
+        {
+            Jnlst().Printf(J_MOREDETAILED, J_MAIN,
+                           "dual infeasibility before last square multiplier update = %e\n",
+                           IpCq().curr_dual_infeasibility(NORM_MAX));
+        }
+        IpData().Append_info_string("y ")
+        DBG_ASSERT(IsValid(eq_multiplier_calculator_));
+        if(IpData().curr()->y_c()->Dim() + IpData().curr()->y_d()->Dim() > 0)
+        {
+            SmartPtr<Vector> y_c = IpData().curr()->y_c()->MakeNew();
+            SmartPtr<Vector> y_d = IpData().curr()->y_d()->MakeNew();
+            bool retval = eq_multiplier_calculator_->CalculateMultipliers(*y_c, *y_d);
+            if(retval)
+            {
+                SmartPtr<const IteratesVector> curr = IpData().curr();
+                SmartPtr<IteratesVector> iterates = curr->MakeNewContainer();
+                iterates->Set_x(*curr->x());
+                iterates->Set_s(*curr->s());
+                iterates->Set_z_L(*curr->z_L());
+                iterates->Set_z_U(*curr->z_U());
+                iterates->Set_v_L(*curr->v_L());
+                iterates->Set_v_U(*curr->v_U());
+                iterates->Set_y_c(*y_c);
+                iterates->Set_y_d(*y_d);
+                IpData().set_trial(iterates);
+                IpData().AcceptTrialPoint();
+            }
+            else
+            {
+                Jnlst().Printf(J_DETAILED, J_MAIN,
+                               "Recalculation of y multpliers skipped because eq_mult_calc returned false. \n");
+            }
+        }
+    }
+
 }
+
+void IpL1IpoptAlg::PrintProblemStatistics()
+{
+    if(!Jnlst().ProduceOutput(J_SUMMARY, J_STATISTICS))
+    {
+        return;
+    }
+
+    Index nx_tot, nx_only_lower, nx_both, nx_only_upper;
+    calc_number_of_bounds(*IpData().curr()->x(),
+                          *IpNLP().x_L(),
+                          *IpNLP().x_U(),
+                          *IpNLP().Px_L(),
+                          *IpNLP().Px_U(),
+                          nx_tot, nx_only_lower, nx_both, nx_only_upper);
+    Index ns_tot, ns_only_lower, ns_both, ns_only_upper;
+    calc_number_of_bounds(*IpData().curr()->s(),
+                          *IpNLP().d_L(),
+                          *IpNLP().d_U(),
+                          *IpNLP().Pd_L(),
+                          *IpNLP().Pd_U(),
+                          ns_tot,
+                          ns_only_lower,
+                          ns_both,
+                          ns_only_upper);
+
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "Total number of variables............................: %8d\n", nx_tot);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "                     variables with only lower bounds: %8d\n", nx_only_lower);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "                variables with lower and upper bounds: %8d\n", nx_both);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "                     variables with only upper bounds: %8d\n", nx_only_upper);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "Total number of equality constraints.................: %8d\n", IpData().curr()->y_c()->Dim());
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "Total number of inequality constraints...............: %8d\n", ns_tot);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "        inequality constraints with only lower bounds: %8d\n", ns_only_lower);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "   inequality constraints with lower and upper bounds: %8d\n", ns_both);
+    Jnlst().Printf(J_SUMMARY, J_STATISTICS,
+                   "        inequality constraints with only upper bounds: %8d\n\n", ns_only_upper);
+}
+
+void IpL1IpoptAlg::ComputeFeasibilityMultipliers()
+{
+    DBG_START_METH("IpL1IpoptAlg::ComputeFeasibilityMultipliers",
+                   dbg_verbosity);
+    DBG_ASSERT(IpCq().IsSquareProblem());
+    if(IsNull(eq_multiplier_calculator_))
+    {
+        Jnlst().Printf(J_WARNING, J_SOLUTION,
+                       "This is a square problem, but multipliers cannot be recomputed at solutions, since no eq_mult_calculator object is available in L1IpoptAlgorithm\n");
+        return;
+    }
+
+    SmartPtr<IteratesVector> iterates = IpData().curr()->MakeNewContainer();
+    SmartPtr<Vector> tmp = iterates->z_L()->MakeNew();
+    tmp->Set(0.);
+    iterates->Set_z_L(*tmp);
+    tmp = iterates->z_U()->MakeNew();
+    tmp->Set(0.);
+    iterates->Set_z_U(*tmp);
+    tmp = iterates->v_L()->MakeNew();
+    tmp->Set(0.);
+    iterates->Set_v_L(*tmp);
+    tmp = iterates->v_U()->MakeNew();
+    tmp->Set(0.);
+    iterates->Set_v_U(*tmp);
+    SmartPtr<Vector> y_c = iterates->y_c()->MakeNew();
+    SmartPtr<Vector> y_d = iterates->y_d()->MakeNew();
+    IpData().set_trial(iterates);
+    IpData().AcceptTrialPoint();
+    bool retval = eq_multiplier_calculator_->CalculateMultipliers(*y_c, *y_d);
+    if(retval)
+    {
+        iterates = IpData().curr()->MakeNewContainer();
+        iterates->Set_y_c(*y_c);
+        iterates->Set_y_d(*y_d);
+        IpData().set_trial(iterates);
+        IpData().AcceptTrialPoint();
+    }
+    else
+    {
+        Jnlst().Printf(J_WARNING, J_SOLUTION,
+                       "Cannot recompute multipliers for feasibility problem."
+                       "Error in eq_mult_calculator ;)\n");
+    }
+}
+
+void IpL1IpoptAlg::calc_number_of_bounds(const Vector &x, const Vector &x_L,
+                                           const Vector &x_U,
+                                           const Matrix &Px_L,
+                                           const Matrix &Px_U, Index &n_tot,
+                                           Index &n_only_lower, Index &n_both,
+                                           Index &n_only_upper)
+{
+    DBG_START_METH("IpL1IpoptAlg::calc_number_of_bounds",
+                   dbg_verbosity);
+    n_tot = x.Dim();
+    SmartPtr<Vector> tmpx = x.MakeNew();
+    SmartPtr<Vector> tmpxL = x_L.MakeNew();
+    SmartPtr<Vector> tmpxU = x_U.MakeNew();
+
+    tmpxL->Set(-1.);
+    tmpxU->Set(2.);
+    Px_L.MultVector(1., *tmpxL, 0., *tmpx);
+    Px_U.MultVector(1., *tmpxU, 1., *tmpx);
+
+    DBG_PRINT_VECTOR(2, "x-indicator", *tmpx);
+
+    SmartPtr<Vector> tmpx0 = x.MakeNew();
+    tmpx0->Set(0.);
+
+    SmartPtr<Vector> tmpx2 = x.MakeNew();
+    tmpx2->Set(-1.);
+    tmpx2->Axpy(1., *tmpx);
+    tmpx2->ElementWiseMax(*tmpx0);
+
+    n_only_upper = (Index) tmpx2->Asum();
+
+    tmpx->Axpy(-2., *tmpx2);
+
+    tmpx2->Copy(*tmpx);
+    tmpx2->ElementWiseMax(*tmpx0);
+
+    n_both = (Index) tmpx2->Asum();
+
+    tmpx->Axpy(-1., *tmpx2);
+    tmpx->ElementWiseMax(*tmpx);
+
+    n_only_lower = (Index) tmpx->Asum();
+}
+
+Number IpL1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
+                                              const Vector &trial_slack,
+                                              const Vector &trial_compl,
+                                              SmartPtr<const Vector> &new_trial_z)
+{
+    DBG_START_METH("IpL1IpoptAlg::correct_bound_multiplier",
+                   dbg_verbosity);
+
+    if(kappa_sigma_ < 1. || trial_z.Dim() == 0)
+    {
+        new_trial_z = &trial_z;
+        return 0.;
+    }
+
+    Number mu;
+    if(IpData().FreeMuMode())
+    {
+        mu = IpCq().trial_avrg_compl();
+        mu = Min(mu, 1e3);
+    }
+    else
+    {
+        mu = IpData().curr_mu();
+    }
+    DBG_PRINT((1, "mu = &8.2e\n", mu));
+    DBG_PRINT_VECTOR(2, "trial_z", trial_z);
+
+    if(trial_compl.Amax() <= kappa_sigma_ * mu && trial_compl.Min() >= 1. / kappa_sigma_ * mu)
+    {
+        new_trial_z = &trial_z;
+        return 0.;
+    }
+    SmartPtr<Vector> one_over_s = trial_z.MakeNew();
+    one_over_s->Copy(trial_compl);
+    one_over_s->ElementWiseReciprocal();
+
+    SmartPtr<Vector> step_z = trial_z.MakeNew();
+    step_z->AddTwoVectors(kappa_sigma_ * mu, *one_over_s, -1., trial_z, 0.);
+
+    DBG_PRINT_VECTOR(2, "step_z", *step_z);
+
+    Number max_correction_up = Max(0., -step_z->Min());
+    if(max_correction_up > 0.)
+    {
+        SmartPtr<Vector> tmp = trial_z.MakeNew();
+        tmp->Set(0.);
+        step_z->ElementWiseMin(*tmp);
+        tmp->AddTwoVectors(1., trial_z, 1., *step_z, 0.);
+        new_trial_z = GetRawPtr(tmp);
+    }
+    else
+    {
+        new_trial_z = &trial_z;
+    }
+
+    step_z->AddTwoVectors(1./kappa_sigma_ * mu, *one_over_s, -1., *new_trial_z, 0.);
+
+    Number max_correction_low = Max(0., step_z->Max());
+    if(max_correction_low > 0.)
+    {
+        SmartPtr<Vector> tmp = trial_z.MakeNew();
+        tmp->Set(0.);
+        step_z->ElementWiseMax(*tmp);
+        tmp->AddTwoVectors(1., *new_trial_z, 1., *step_z, 0.);
+        new_trial_z = GetRawPtr(tmp);
+    }
+
+    DBG_PRINT_VECTOR(2, "new_trial_z", *new_trial_z);
+
+    return Max(max_correction_up, max_correction_low);
+}
+
+void IpL1IpoptAlg::print_copyright_message(
+        const Journalist& jnlst
+)
+{
+    jnlst.Printf(J_INSUPPRESSIBLE, J_MAIN,
+                 "\n******************************************************************************\n"
+                 "This program contains Ipopt, a library for large-scale nonlinear optimization.\n"
+                 " Ipopt is released as open source code under the Eclipse Public License (EPL).\n"
+                 "         For more information visit https://github.com/coin-or/Ipopt\n"
+                 "******************************************************************************\n\n");
+    copyright_message_printed = true;
+}
+
+void IpL1IpoptAlg::compute_rho_trial()
+{}
+
 }
 
 

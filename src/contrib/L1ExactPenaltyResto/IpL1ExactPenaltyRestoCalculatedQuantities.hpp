@@ -174,20 +174,20 @@ private:
     CachedResults<Number> trial_f_cache_l1_;
     CachedResults<const Vector> curr_grad_f_cache_l1_;
     CachedResults<const Vector> trial_grad_f_cache_l1_;
-    CachedResult<Number> curr_barrier_obj_cache_l1_;
-    CachedResult<Number> trial_barrier_obj_cache_l1_;
+    CachedResults<Number> curr_barrier_obj_cache_l1_;
+    CachedResults<Number> trial_barrier_obj_cache_l1_;
 
-    CachedResult<const Vector> curr_grad_barrier_obj_x_cache_l1_;
-    CachedResult<const Vector> curr_grad_barrier_obj_s_cache_l1_;
+    CachedResults<const Vector> curr_grad_barrier_obj_x_cache_l1_;
+    CachedResults<const Vector> curr_grad_barrier_obj_s_cache_l1_;
 
     CachedResults<const Vector> grad_kappa_times_damping_x_cache_l1_;
     CachedResults<const Vector> grad_kappa_times_damping_s_cache_l1_;
 
 
-    CachedResult<const Vector> dampind_x_L_cache_l1_;
-    CachedResult<const Vector> dampind_x_U_cache_l1_;
-    CachedResult<const Vector> dampind_s_L_cache_l1_;
-    CachedResult<const Vector> dampind_s_U_cache_l1_;
+    CachedResults<const Vector> dampind_x_L_cache_l1_;
+    CachedResults<const Vector> dampind_x_U_cache_l1_;
+    CachedResults<const Vector> dampind_s_L_cache_l1_;
+    CachedResults<const Vector> dampind_s_U_cache_l1_;
 
 
     SmartPtr<Vector> dampind_x_L_l1_;

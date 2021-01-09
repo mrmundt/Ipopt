@@ -107,6 +107,8 @@ private:
             SmartPtr<const Vector>& new_trial_z
     );
 
+    void compute_rho_trial();
+    void update_rho();
 };
 }
 
