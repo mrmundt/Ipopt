@@ -121,12 +121,12 @@ private:
     {
         L1ExactPenaltyRestoData* l1epresto_data = static_cast<L1ExactPenaltyRestoData*>(&(ip_data_l1_->AdditionalData()));
         DBG_ASSERT(dynamic_cast<L1ExactPenaltyRestoData*>(&(ip_data_l1->AdditionalData())));
-        return l1epresto_data;
+        return *l1epresto_data;
     }
 
-    SmartPtr<IpL1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
+    SmartPtr<L1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
     {
-        SmartPtr<const IpL1ExactPenaltyRestoIpoptNLP> l1epr_nlp = static_cast<const IpL1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_));
+        SmartPtr<const L1ExactPenaltyRestoIpoptNLP> l1epr_nlp = static_cast<const L1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_));
         DBG_ASSERT(dynamic_cast<const IpL1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_)));
         return l1epr_nlp;
     }
@@ -172,22 +172,22 @@ private:
 
     CachedResults<Number> curr_f_cache_l1_;
     CachedResults<Number> trial_f_cache_l1_;
-    CachedResults<const Vector> curr_grad_f_cache_l1_;
-    CachedResults<const Vector> trial_grad_f_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> curr_grad_f_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> trial_grad_f_cache_l1_;
     CachedResults<Number> curr_barrier_obj_cache_l1_;
     CachedResults<Number> trial_barrier_obj_cache_l1_;
 
-    CachedResults<const Vector> curr_grad_barrier_obj_x_cache_l1_;
-    CachedResults<const Vector> curr_grad_barrier_obj_s_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> curr_grad_barrier_obj_x_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> curr_grad_barrier_obj_s_cache_l1_;
 
-    CachedResults<const Vector> grad_kappa_times_damping_x_cache_l1_;
-    CachedResults<const Vector> grad_kappa_times_damping_s_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> grad_kappa_times_damping_x_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> grad_kappa_times_damping_s_cache_l1_;
 
 
-    CachedResults<const Vector> dampind_x_L_cache_l1_;
-    CachedResults<const Vector> dampind_x_U_cache_l1_;
-    CachedResults<const Vector> dampind_s_L_cache_l1_;
-    CachedResults<const Vector> dampind_s_U_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> dampind_x_L_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> dampind_x_U_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> dampind_s_L_cache_l1_;
+    CachedResults<SmartPtr<const Vector>> dampind_s_U_cache_l1_;
 
 
     SmartPtr<Vector> dampind_x_L_l1_;
@@ -197,14 +197,14 @@ private:
 
     Number kappa_d_l1_;
 
-    CachedResults<const SymMatrix> curr_exact_hessian_cache_l1_;
-    CachedResults<const Vector> curr_grad_lag_x_cache_l1_;
-    CachedResults<const Vector> trial_grad_lag_x_cache_l1_;
-    CachedResults<const Vector> curr_grad_lag_s_cache_l1_;
-    CachedResults<const Vector> trial_grad_lag_s_cache_l1_;
+    CachedResults<SmartPtr<const SymMatrix>> curr_exact_hessian_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > curr_grad_lag_x_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > trial_grad_lag_x_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > curr_grad_lag_s_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > trial_grad_lag_s_cache_l1_;
 
-    CachedResults<const Vector> curr_grad_lag_with_damping_x_cache_l1_;
-    CachedResults<const Vector> curr_grad_lag_with_damping_s_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_x_cache_l1_;
+    CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_s_cache_l1_;
 
     CachedResults<const Vector> curr_compl_x_L_cache_l1_;
     CachedResults<const Vector> trial_compl_x_L_cache_l1_;

@@ -25,7 +25,6 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         dampind_x_U_cache_l1_(2),
         dampind_s_L_cache_l1_(2),
         dampind_s_U_cache_l1_(2),
-        curr_grad_f_cache_l1_(2),
         trial_f_cache_l1_(5),
         curr_grad_f_cache_l1_(2),
         trial_grad_f_cache_l1_(1),
@@ -52,7 +51,7 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         curr_sigma_x_cache_l1_(1),
         curr_sigma_s_cache_l1_(1),
         dampind_x_L_l1_(NULL),
-        dampind_x_u_l1_(NULL),
+        dampind_x_U_l1_(NULL),
         dampind_s_L_l1_(NULL),
         dampind_s_U_l1_(NULL),
 {
@@ -239,9 +238,9 @@ Number L1ExactPenaltyRestoCQ::CalcBarrierTermL1(
     DBG_PRINT((1, "BarrierTerm after x_U (p + n) = %25.16e\n", retval));
     retval *= -mu;
 
-    retval2 += x_only_x_L->SumLogs();
+    retval2 += sl_x_only_x_L->SumLogs();
     DBG_PRINT((1, "BarrierTerm after x_L (x only) = %25.16e\n", retval2));
-    retval2 += x_only_x_U->SumLogs();
+    retval2 += sl_x_only_x_U->SumLogs();
     DBG_PRINT((1, "BarrierTerm after x_U (x only) = %25.16e\n", retval2));
 
     retval2 += slack_s_L.SumLogs();
@@ -290,7 +289,7 @@ Number L1ExactPenaltyRestoCQ::curr_barrier_obj()
     SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
     DBG_PRINT_VECTOR(2, "curr_x", *x);
     DBG_PRINT_VECTOR(2, "curr_s", *s);
-    std::vector<const TaggedObject> tdeps(2);
+    std::vector<const TaggedObject*> tdeps(2);
     tdeps[0] = GetRawPtr(x);
     tdeps[1] = GetRawPtr(s);
 
@@ -308,7 +307,7 @@ Number L1ExactPenaltyRestoCQ::curr_barrier_obj()
             DBG_PRINT((1, "curr_F=%e\n", result));
             result += CalcBarrierTermL1(mu, *curr_slack_x_L(), *curr_slack_x_U(), *curr_slack_s_L(), *curr_slack_s_U());
         }
-        curr_barrier_obj_cache_l1_.ADDCachedResult(result, tdeps, sdeps);
+        curr_barrier_obj_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
     DBG_ASSERT(IsFiniteNumber(result));
 
@@ -321,11 +320,11 @@ Number L1ExactPenaltyRestoCQ::trial_barrier_obj()
                    dbg_verbosity);
     Number result;
 
-    SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
-    SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
+    SmartPtr<const Vector> x = ip_data_l1_->trial()->x();
+    SmartPtr<const Vector> s = ip_data_l1_->trial()->s();
     DBG_PRINT_VECTOR(2, "curr_x", *x);
     DBG_PRINT_VECTOR(2, "curr_s", *s);
-    std::vector<const TaggedObject> tdeps(2);
+    std::vector<const TaggedObject*> tdeps(2);
     tdeps[0] = GetRawPtr(x);
     tdeps[1] = GetRawPtr(s);
 
@@ -343,7 +342,7 @@ Number L1ExactPenaltyRestoCQ::trial_barrier_obj()
             DBG_PRINT((1, "curr_F=%e\n", result));
             result += CalcBarrierTermL1(mu, *curr_slack_x_L(), *curr_slack_x_U(), *curr_slack_s_L(), *curr_slack_s_U());
         }
-        trial_barrier_obj_cache_l1_.ADDCachedResult(result, tdeps, sdeps);
+        trial_barrier_obj_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
     DBG_ASSERT(IsFiniteNumber(result));
     return result;
@@ -369,7 +368,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_x()
     if( !curr_grad_barrier_obj_x_cache_l1_.GetCachedResult(result, tdeps, sdeps))
     {
         SmartPtr<Vector> tmp1 = x->MakeNew();
-        tmp1->Copy(curr_grad_f());
+        tmp1->Copy(*curr_grad_f());
 
         SmartPtr<Vector> tmp2 = x->MakeNew();
         tmp2->Set(0.0);
@@ -461,7 +460,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
             SmartPtr<const Vector> dampind_x_U;
             SmartPtr<const Vector> dampind_s_L;
             SmartPtr<const Vector> dampind_s_U;
-            ComputeDampingIndicators(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
+            ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
 
             DBG_PRINT((1, "kappa_d*mu = %e\n", kappa_d_l1_ * mu));
             DBG_PRINT_VECTOR(2, "dampind_s_L", *dampind_s_L);
@@ -648,30 +647,30 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
     //if( IsNull(dampind_x_L_l1_))
     if(!dampind_x_L_cache_l1_.GetCachedResult(dampind_x_L, tdeps, sdeps)) {
         Tmp_x_L_l1().Set(1.0);
-        ip_nlp_l1_->Px_L()->MultVector(1.0, Tmp_x_L_l1(), 0.0, Tmp_x());
+        ip_nlp_l1_->Px_L()->MultVector(1.0, Tmp_x_L_l1(), 0.0, Tmp_x_l1());
         Tmp_x_U_l1().Set(1.0);
-        ip_nlp_l1_->Px_U()->MultVector(-1.0, Tmp_x_U_l1(), 1.0, Tmp_x());
+        ip_nlp_l1_->Px_U()->MultVector(-1.0, Tmp_x_U_l1(), 1.0, Tmp_x_l1());
 
         dampind_x_L_l1_ = ip_nlp_l1_->x_L()->MakeNew();
-        ip_nlp_l1_->Px_L()->TransMultVector(1.0, Tmp_x(), 0.0,
+        ip_nlp_l1_->Px_L()->TransMultVector(1.0, Tmp_x_l1(), 0.0,
                                             *dampind_x_L_l1_);
 
         dampind_x_U_l1_ = ip_nlp_l1_->x_U()->MakeNew();
-        ip_nlp_l1_->Px_U()->TransMultVector(-1.0, Tmp_x(), 0.0,
+        ip_nlp_l1_->Px_U()->TransMultVector(-1.0, Tmp_x_l1(), 0.0,
                                             *dampind_x_U_l1_);
 
         // Now for s
         Tmp_s_L_l1().Set(1.0);
-        ip_nlp_l1_->Pd_L()->MultVector(1.0, Tmp_s_L_l1(), 0.0, Tmp_s());
+        ip_nlp_l1_->Pd_L()->MultVector(1.0, Tmp_s_L_l1(), 0.0, Tmp_s_l1());
         Tmp_s_U_l1().Set(1.0);
-        ip_nlp_l1_->Pd_U()->MultVector(-1.0, Tmp_s_U_l1(), 1.0, Tmp_s());
+        ip_nlp_l1_->Pd_U()->MultVector(-1.0, Tmp_s_U_l1(), 1.0, Tmp_s_l1());
 
         dampind_s_L_l1_ = ip_nlp_l1_->d_L()->MakeNew();
-        ip_nlp_l1_->Pd_L()->TransMultVector(1.0, Tmp_s(), 0.0,
+        ip_nlp_l1_->Pd_L()->TransMultVector(1.0, Tmp_s_l1(), 0.0,
                                             *dampind_s_L_l1_);
 
         dampind_s_U_l1_ = ip_nlp_l1_->d_U()->MakeNew();
-        ip_nlp_l1_->Pd_U()->TransMultVector(-1.0, Tmp_s(), 0.0,
+        ip_nlp_l1_->Pd_U()->TransMultVector(-1.0, Tmp_s_l1(), 0.0,
                                             *dampind_s_U_l1_);
 
         DBG_PRINT_VECTOR(2, "dampind_x_L_l1_", *dampind_x_L_l1_);
@@ -682,11 +681,11 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
         // Scale the relevant parts if necessary.
         CompoundVector *C_dampind_x_L_ = static_cast<CompoundVector *>(GetRawPtr(
                 dampind_x_L_l1_));
-        SmartPtr <Vector> tmp_xonly_x_L_ = C_dampind_x_L_.GetCompNonConst(0);
+        SmartPtr <Vector> tmp_xonly_x_L_ = C_dampind_x_L_->GetCompNonConst(0);
 
         CompoundVector *C_dampind_x_U_ = static_cast<CompoundVector *>(GetRawPtr(
                 dampind_x_U_l1_));
-        SmartPtr <Vector> tmp_xonly_x_U_ = C_dampind_x_U_.GetCompNonConst(0);
+        SmartPtr <Vector> tmp_xonly_x_U_ = C_dampind_x_U_->GetCompNonConst(0);
 
         // We got to introduce the 1/rho here for the damping terms.
         // For both xL and xU slacks and sL, and sU.
@@ -707,10 +706,10 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
         dampind_s_L = ConstPtr(dampind_s_L_l1_);
         dampind_s_U = ConstPtr(dampind_s_U_l1_);
 
-        dampind_x_L_l1_.AddCachedResult(dampind_x_L, tdeps, sdeps);
-        dampind_x_U_l1_.AddCachedResult(dampind_x_U, tdeps, sdeps);
-        dampind_s_L_l1_.AddCachedResult(dampind_s_L, tdeps, sdeps);
-        dampind_s_U_l1_.AddCachedResult(dampind_s_U, tdeps, sdeps);
+        dampind_x_L_cache_l1_.AddCachedResult(dampind_x_L, tdeps, sdeps);
+        dampind_x_U_cache_l1_.AddCachedResult(dampind_x_U, tdeps, sdeps);
+        dampind_s_L_cache_l1_.AddCachedResult(dampind_s_L, tdeps, sdeps);
+        dampind_s_U_cache_l1_.AddCachedResult(dampind_s_U, tdeps, sdeps);
 
     } else {
         dampind_x_L_cache_l1_.GetCachedResult(dampind_x_L, tdeps, sdeps);
@@ -761,16 +760,21 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
     SmartPtr<const Vector> z_L = ip_data_l1_->curr()->z_L();
     SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
 
-    std::vector<const TaggedObject*> deps(5);
-    deps[0] = GetRawPtr(x);
-    deps[1] = GetRawPtr(y_c);
-    deps[2] = GetRawPtr(y_d);
-    deps[3] = GetRawPtr(z_L);
-    deps[4] = GetRawPtr(z_U);
+    Number rho = L1EPRestoData().CurrentRho();
 
-    if( !curr_grad_lag_x_cache_l1_.GetCachedResult(result, deps) )
+    std::vector<const TaggedObject*> tdeps(5);
+    tdeps[0] = GetRawPtr(x);
+    tdeps[1] = GetRawPtr(y_c);
+    tdeps[2] = GetRawPtr(y_d);
+    tdeps[3] = GetRawPtr(z_L);
+    tdeps[4] = GetRawPtr(z_U);
+
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    if( !curr_grad_lag_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
-        if( !trial_grad_lag_x_cache_l1_.GetCachedResult(result, deps) )
+        if( !trial_grad_lag_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
         {
             SmartPtr<Vector> tmp = x->MakeNew();
             DBG_PRINT_VECTOR(2, "curr_grad_f", *curr_grad_f());
@@ -783,11 +787,11 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
-                CompoundVector* C_z_L = static_cast<CompoutndVector*>(GetRawPtr(tmpzL));
+                CompoundVector* C_z_L = static_cast<CompoundVector*>(GetRawPtr(tmpzL));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
                 C_z_L->Scal(1/rho);
-                CompoundVector* C_z_U = static_cast<CompoutndVector*>(GetRawPtr(tmpzU));
+                CompoundVector* C_z_U = static_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
                 C_z_U->Scal(1/rho);
@@ -801,7 +805,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
 
             result = ConstPtr(tmp);
         }
-        curr_grad_lag_x_cache_l1_.AddCachedResult(result, deps);
+        curr_grad_lag_x_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
 
     return result;
@@ -814,22 +818,27 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
                    dbg_verbosity);
     SmartPtr<const Vector> result;
 
-    SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
-    SmartPtr<const Vector> y_c = ip_data_l1_->curr()->y_c();
-    SmartPtr<const Vector> y_d = ip_data_l1_->curr()->y_d();
-    SmartPtr<const Vector> z_L = ip_data_l1_->curr()->z_L();
-    SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
+    SmartPtr<const Vector> x = ip_data_l1_->trial()->x();
+    SmartPtr<const Vector> y_c = ip_data_l1_->trial()->y_c();
+    SmartPtr<const Vector> y_d = ip_data_l1_->trial()->y_d();
+    SmartPtr<const Vector> z_L = ip_data_l1_->trial()->z_L();
+    SmartPtr<const Vector> z_U = ip_data_l1_->trial()->z_U();
 
-    std::vector<const TaggedObject*> deps(5);
-    deps[0] = GetRawPtr(x);
-    deps[1] = GetRawPtr(y_c);
-    deps[2] = GetRawPtr(y_d);
-    deps[3] = GetRawPtr(z_L);
-    deps[4] = GetRawPtr(z_U);
+    Number rho = L1EPRestoData().CurrentRho();
 
-    if( !trial_grad_lag_x_cache_l1_.GetCachedResult(result, deps) )
+    std::vector<const TaggedObject*> tdeps(5);
+    tdeps[0] = GetRawPtr(x);
+    tdeps[1] = GetRawPtr(y_c);
+    tdeps[2] = GetRawPtr(y_d);
+    tdeps[3] = GetRawPtr(z_L);
+    tdeps[4] = GetRawPtr(z_U);
+
+    std::vector<Number> sdeps(1);
+    sdeps[0] = rho;
+
+    if( !trial_grad_lag_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
-        if( !curr_grad_lag_x_cache_l1_.GetCachedResult(result, deps) )
+        if( !curr_grad_lag_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
         {
             SmartPtr<Vector> tmp = x->MakeNew();
             DBG_PRINT_VECTOR(2, "curr_grad_f", *curr_grad_f());
@@ -842,11 +851,11 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
-                CompoundVector* C_z_L = static_cast<CompoutndVector*>(GetRawPtr(tmpzL));
+                CompoundVector* C_z_L = static_cast<CompoundVector*>(GetRawPtr(tmpzL));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
                 C_z_L->Scal(1/rho);
-                CompoundVector* C_z_U = static_cast<CompoutndVector*>(GetRawPtr(tmpzU));
+                CompoundVector* C_z_U = static_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
                 C_z_U->Scal(1/rho);
@@ -860,7 +869,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
 
             result = ConstPtr(tmp);
         }
-        trial_grad_lag_x_cache_l1_.AddCachedResult(result, deps);
+        trial_grad_lag_x_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
 
     return result;
