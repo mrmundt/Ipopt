@@ -40,7 +40,7 @@ public:
             SmartPtr<RegisteredOptions> roptions
     );
 
-    bool Initialize(
+    bool Initialize1(
     const Journalist& jnlst,
     const OptionsList& options,
     const std::string& prefix
@@ -63,7 +63,7 @@ public:
     SmartPtr<const Vector> grad_kappa_times_damping_x() override;
     SmartPtr<const Vector> grad_kappa_times_damping_s() override;
 
-    SmartPtr<const SymMatrix> curr_exact_hessian();
+    SmartPtr<const SymMatrix> curr_exact_hessian() override;
 
     SmartPtr<const Vector> curr_grad_lag_x() override;
     SmartPtr<const Vector> trial_grad_lag_x() override;
@@ -93,7 +93,6 @@ public:
     SmartPtr<const Vector> curr_sigma_s() override;
 
 
-    Number ComputeRhoTrial();
 private:
     /**@name Default Compiler Generated Methods
      *
@@ -104,14 +103,7 @@ private:
 
     void operator=(const L1ExactPenaltyRestoCQ&);
 
-    enum RhoUpdateKind{
-        QUAD=0,
-        QUADNOSIGNA,
-        LINEAR,
-        CONST
-    };
 
-    RhoUpdateKind l1exactpenalty_rho_type_;
 
     SmartPtr<IpoptData> ip_data_l1_;
     SmartPtr<IpoptNLP> ip_nlp_l1_;
@@ -195,7 +187,7 @@ private:
     SmartPtr<Vector> dampind_s_L_l1_;
     SmartPtr<Vector> dampind_s_U_l1_;
 
-    Number kappa_d_l1_;
+    Number kappa_d_l1_{1.};
 
     CachedResults<SmartPtr<const SymMatrix>> curr_exact_hessian_cache_l1_;
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_x_cache_l1_;

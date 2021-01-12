@@ -4,11 +4,23 @@
 
 #include "IpL1ExactPenaltyRho.hpp"
 #include "IpCompoundVector.hpp"
+#include "IpCompoundSymMatrix.hpp"
+#include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
 
-Ipopt::Number Ipopt::L1ExactPenaltyRho::ComputeRhoTrial()
+namespace Ipopt
+{
+bool L1ExactPenaltyRho::InitializeImpl(const OptionsList &options,
+                                              const std::string &prefix) {
+    return false;
+}
+
+
+
+Number L1ExactPenaltyRho::ComputeRhoTrial()
 {
 
-    if (l1exactpenalty_rho_type_ == CONST){return l1exactpenalty_rho0_;} // if fixed
+    if (l1_epr_update_kind_ == CONST)
+    {return l1exactpenalty_rho0_;} // if fixed
 
     // rho
     Number rho_trial;
@@ -25,15 +37,15 @@ Ipopt::Number Ipopt::L1ExactPenaltyRho::ComputeRhoTrial()
     Number mu = IpData().curr_mu();
     std::vector<Number> sdeps(1);
     sdeps[0] = mu;
-    curr_rho_cache_.GetCachedResult(rho_trial, tdeps, sdeps);
+    trial_rho_cache_.GetCachedResult(rho_trial, tdeps, sdeps);
 
     SmartPtr<const CompoundVector> xC = dynamic_cast<const CompoundVector*>(GetRawPtr(x_resto));
 
     // fetch grad_f_barrier
-    SmartPtr<const Vector> grad_barrier_xR = curr_grad_barrier_obj_x();
+    SmartPtr<const Vector> grad_barrier_xR = IpCq().curr_grad_barrier_obj_x();
     SmartPtr<const CompoundVector> grad_barrier_xRC = dynamic_cast<const CompoundVector*>(GetRawPtr(grad_barrier_xR));
     SmartPtr<const Vector> grad_phi_x = grad_barrier_xRC->GetComp(0);
-    SmartPtr<const Vector> grad_phi_s = curr_grad_barrier_obj_s();
+    SmartPtr<const Vector> grad_phi_s = IpCq().curr_grad_barrier_obj_s();
     // fetch dx
     SmartPtr<const CompoundVector> dC = dynamic_cast<const CompoundVector*>(GetRawPtr(dx_R));
     SmartPtr<const Vector> dx = dC->GetComp(0);
@@ -76,9 +88,9 @@ Ipopt::Number Ipopt::L1ExactPenaltyRho::ComputeRhoTrial()
     Number sigW = 0.0;
     //THROW_EXCEPTION(DAVS, "fail\n");
     //ASSERT_EXCEPTION(false, DAVS,"fail");
-    if (!(l1exactpenalty_rho_type_ == LINEAR)) { // :(
+    if (!(l1_epr_update_kind_ == LINEAR)) { // :(
         // fetch dx_R and W_R
-        SmartPtr<const SymMatrix> W_R = ip_data_->W();
+        SmartPtr<const SymMatrix> W_R = IpData().W();
 
         // fetch Wx
         SmartPtr<const CompoundSymMatrix> WC = dynamic_cast<const CompoundSymMatrix *>(GetRawPtr(W_R));
@@ -89,37 +101,35 @@ Ipopt::Number Ipopt::L1ExactPenaltyRho::ComputeRhoTrial()
         SmartPtr<Vector> dss = ds->MakeNew();  // vessel for the final product
         dss->Set(0.);
         // fetch sigma_x
-        SmartPtr<const Vector> sigma_R = curr_sigma_x();
+        SmartPtr<const Vector> sigma_R = IpCq().curr_sigma_x();
 
         SmartPtr<const CompoundVector> sigmaC = dynamic_cast<const CompoundVector *>(GetRawPtr(sigma_R));
         SmartPtr<const Vector> sigma_x = sigmaC->GetComp(0);
         // fetch sigma_s
-        SmartPtr<const Vector> sigma_s = curr_sigma_s();
+        SmartPtr<const Vector> sigma_s = IpCq().curr_sigma_s();
         //
-        SmartPtr<DiagMatrixSpace> diag_space_x = new DiagMatrixSpace(Wx->NRows());
-        SmartPtr<SumSymMatrixSpace> ss_space = new SumSymMatrixSpace(Wx->NRows(), 2);
-        SmartPtr<const SymMatrixSpace> Wx_space = Wx->OwnerSymMatrixSpace();
-        ss_space->SetTermSpace(0, *Wx_space);
-        ss_space->SetTermSpace(1, *diag_space_x);
 
-        SmartPtr<DiagMatrix> diag_sigma_x = diag_space_x->MakeNewDiagMatrix();
 
-        SmartPtr<Vector> sigma_dummy = sigma_x->MakeNewCopy();
-        sigma_dummy->Set(0.0);
-        if (l1exactpenalty_rho_type_ == QUAD) {
-            diag_sigma_x->SetDiag(*sigma_x);
+        if (l1_epr_update_kind_ == QUAD) {
+            Tmp_Sigma_x().SetDiag(*sigma_x);
         }
-        diag_sigma_x->SetDiag(*sigma_dummy);
-        SmartPtr<SumSymMatrix> Wx_Sigma = ss_space->MakeNewSumSymMatrix();
-        Wx_Sigma->SetTerm(0, 1.0, *Wx);
-        Wx_Sigma->SetTerm(1, 1.0, *diag_sigma_x);
-        Wx_Sigma->MultVector(0.5, *dx, 0.0, *dxx);
+        else
+        {
+            SmartPtr<Vector> sigma_dummy_0 = sigma_x->MakeNew();
+            sigma_dummy_0->Set(0.);
+            Tmp_Sigma_x().SetDiag(*sigma_dummy_0);
+        }
+
+
+        Tmp_Wx_Sigma_x().SetTerm(0, 1.0, *Wx);
+        Tmp_Wx_Sigma_x().SetTerm(1, 1.0, Tmp_Sigma_x());
+        Tmp_Wx_Sigma_x().MultVector(0.5, *dx, 0.0, *dxx);
         dxWxdx = dxx->Dot(*dx);
         dss->Copy(*ds);
         dss->Scal(0.5);
         dss->ElementWiseMultiply(*sigma_s);
         // put condition here
-        if (l1exactpenalty_rho_type_ == QUADNOSIGMA) { // :(
+        if (l1_epr_update_kind_ == QUADNOSIGMA) { // :(
             dss->Set(0.0);
         }
         dsWsdx = dss->Dot(*ds);
@@ -137,8 +147,69 @@ Ipopt::Number Ipopt::L1ExactPenaltyRho::ComputeRhoTrial()
     rho_trial = ((dxWxdx + dsWsdx) * sigW + dphidx + dphids)/((1.0-epsilon_l1_) * ck - ppnp);
     sufficient_feasibility_ = ((1.0 - epsilon_l1_) * ck - ppnp) > 0;
     DBG_PRINT((2,"(1-%e)||c|| - (p+n)e=%e \n", epsilon_l1_,(1.0-epsilon_l1_) * ck - ppnp));
-    curr_rho_cache_.AddCachedResult(rho_trial, tdeps, sdeps);  // ToDo have this working properly
+    trial_rho_cache_.AddCachedResult(rho_trial, tdeps, sdeps);  // ToDo have this working properly
     return rho_trial;
 
     return 0;
 }
+
+SumSymMatrix &L1ExactPenaltyRho::Tmp_Wx_Sigma_x() {
+    if (!IsValid(Hx_Sigma_x_))
+    {
+        // Create the new Matrix
+        Hx_Sigma_x_ = Hx_p_Sigma_x_space_->MakeNewSumSymMatrix();
+    }
+    return *Hx_Sigma_x_;
+}
+
+void L1ExactPenaltyRho::SetMatrixSpaces()
+{
+    // Make new matrix by using the original h_space
+    auto* IpL1NLP = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP());
+    SmartPtr<const VectorSpace> orig_x_space;
+    SmartPtr<const VectorSpace> orig_c_space;
+    SmartPtr<const VectorSpace> orig_d_space;
+    SmartPtr<const VectorSpace> orig_x_l_space;
+    SmartPtr<const MatrixSpace> orig_px_l_space;
+    SmartPtr<const VectorSpace> orig_x_u_space;
+    SmartPtr<const MatrixSpace> orig_px_u_space;
+    SmartPtr<const VectorSpace> orig_d_l_space;
+    SmartPtr<const MatrixSpace> orig_pd_l_space;
+    SmartPtr<const VectorSpace> orig_d_u_space;
+    SmartPtr<const MatrixSpace> orig_pd_u_space;
+    SmartPtr<const MatrixSpace> orig_jac_c_space;
+    SmartPtr<const MatrixSpace> orig_jac_d_space;
+
+
+    IpL1NLP->OrigIpNLP().GetSpaces(orig_x_space,
+                                   orig_c_space,
+                                   orig_d_space,
+                                   orig_x_l_space,
+                                   orig_px_l_space,
+                                   orig_x_u_space,
+                                   orig_px_u_space,
+                                   orig_d_l_space,
+                                   orig_pd_l_space,
+                                   orig_d_u_space,
+                                   orig_pd_u_space,
+                                   orig_jac_c_space,
+                                   orig_jac_d_space,
+                                   original_h_space_);
+    // Create Diagonal space for sigma_x
+    Sigma_x_space_ = new DiagMatrixSpace(original_h_space_->NRows());
+    // Create SumSymMaxtrix space for W + sigma_x
+    Hx_p_Sigma_x_space_ = new SumSymMatrixSpace(original_h_space_->NRows(), 2);
+
+}
+
+DiagMatrix &L1ExactPenaltyRho::Tmp_Sigma_x()
+{
+    if (!IsValid(Sigma_x_))
+    {
+        Sigma_x_ = Sigma_x_space_->MakeNewDiagMatrix();
+    }
+    return *Sigma_x_;
+}
+
+}
+

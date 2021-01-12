@@ -13,6 +13,7 @@ namespace Ipopt
 #if IPOPT_VERBOSITY > 0
     static const Index dbg_verbosity = 0;
 #endif
+
 L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         const SmartPtr<IpoptNLP>& ip_nlp,
         const SmartPtr<IpoptData>& ip_data
@@ -54,10 +55,12 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         dampind_x_U_l1_(NULL),
         dampind_s_L_l1_(NULL),
         dampind_s_U_l1_(NULL),
+
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ",
                    dbg_verbosity);
     DBG_ASSERT(IsValid(ip_nlp_) && IsValid(ip_data_));
+
 }
 L1ExactPenaltyRestoCQ::~L1ExactPenaltyRestoCQ() noexcept
 { }
@@ -79,14 +82,15 @@ void L1ExactPenaltyRestoCQ::RegisterOptions(
             );
 }
 
-bool L1ExactPenaltyRestoCQ::Initialize(const Journalist &jnlst,
+bool L1ExactPenaltyRestoCQ::Initialize1(const Journalist &jnlst,
                                        const OptionsList &options,
                                        const std::string &prefix)
 {
     Index rho_int;
-    options.GetEnumValue("l1exactpenalty_rho_type", rho_int, prefix);
-    l1exactpenalty_rho_type_ = RhoUpdateKind(rho_int);
+    //options.GetEnumValue("l1exactpenalty_rho_type", rho_int, prefix);
+//    l1exactpenalty_rho_type_ = RhoUpdateKind(rho_int);
     bool retval = false;
+
     retval = IpoptCalculatedQuantities::Initialize(jnlst, options, prefix);
     return retval;
 
@@ -431,11 +435,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
     sdeps[1] = rho;
 
     DBG_PRINT((1, "curr_mu=%e\n", mu));
-    Number scal = 1.0;
-    if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
-    {
-        scal = 1/rho;
-    }
+    DBG_PRINT((1, "curr_rho=%e\n", rho));
 
     if( !curr_grad_barrier_obj_s_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
@@ -449,7 +449,10 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
         ip_nlp_l1_->Pd_U()->AddMSinvZ(mu, *curr_slack_s_U(), Tmp_s_U_l1(), *tmp1);
 
         // rho part.
-        tmp1->Scal(scal);
+        if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        {
+            tmp1->Scal(1/rho);
+        }
 
         DBG_PRINT_VECTOR(2, "Barrier_Grad_s without damping", *tmp1);
 
@@ -512,68 +515,6 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()
         result = ConstPtr(tmp1);
 
         grad_kappa_times_damping_x_cache_l1_.AddCachedResult(result, tdeps, sdeps);
-    }
-
-    return result;
-}
-
-SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
-{
-    DBG_START_METH("L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()",
-                   dbg_verbosity);
-    DBG_ASSERT(initialize_called_);
-    SmartPtr<const Vector> result;
-
-    SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
-    std::vector<const TaggedObject*> tdeps(1);
-    tdeps[0] = GetRawPtr(s);
-    Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
-    std::vector<Number> sdeps(2);
-    sdeps[0] = mu;
-    sdeps[1] = rho;
-    DBG_PRINT((1, "curr_mu=%e\n", mu));
-    DBG_PRINT((1, "curr_rho=%e\n", rho));
-
-    if( !curr_grad_barrier_obj_s_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
-    {
-        SmartPtr<Vector> tmp1 = s->MakeNew();
-
-        Tmp_s_L_l1().Set(-mu);
-        Tmp_s_L_l1().ElementWiseDivide(*curr_slack_s_L());
-        ip_nlp_l1_->Pd_L()->MultVector(1., Tmp_s_L_l1(), 0., *tmp1);
-
-        Tmp_s_U_l1().Set(1.);
-        ip_nlp_l1_->Pd_U()->AddMSinvZ(mu, *curr_slack_s_U(), Tmp_s_U_l1(), *tmp1);
-
-        if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
-        {
-            tmp1->Scal(1/rho);
-        }
-
-        DBG_PRINT_VECTOR(2, "Barrier_Grad_s without damping", *tmp1);
-
-        // Take care of linear damping terms
-        if( kappa_d_l1_ > 0. )
-        {
-            SmartPtr<const Vector> dampind_x_L;
-            SmartPtr<const Vector> dampind_x_U;
-            SmartPtr<const Vector> dampind_s_L;
-            SmartPtr<const Vector> dampind_s_U;
-            ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
-
-            DBG_PRINT((1, "kappa_d*mu = %e\n", kappa_d_l1_ * mu));
-            DBG_PRINT_VECTOR(2, "dampind_s_L", *dampind_s_L);
-            DBG_PRINT_VECTOR(2, "dampind_s_U", *dampind_s_U);
-            ip_nlp_l1_->Pd_L()->MultVector(kappa_d_l1_ * mu, *dampind_s_L, 1., *tmp1);
-            ip_nlp_l1_->Pd_U()->MultVector(-kappa_d_l1_ * mu, *dampind_s_U, 1., *tmp1);
-        }
-
-        DBG_PRINT_VECTOR(2, "Barrier_Grad_s with damping", *tmp1);
-
-        result = ConstPtr(tmp1);
-
-        curr_grad_barrier_obj_s_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
 
     return result;
@@ -1058,9 +999,6 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
 }
 
 
-
-
-Number L1ExactPenaltyRestoCQ::ComputeRhoTrial() {return 1000;}
 
 Vector& L1ExactPenaltyRestoCQ::Tmp_x_l1()
 {
