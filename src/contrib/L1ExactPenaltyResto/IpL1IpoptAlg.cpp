@@ -23,6 +23,7 @@ IpL1IpoptAlg::IpL1IpoptAlg(
         const SmartPtr<IterateInitializer> &iterate_initializer,
         const SmartPtr<IterationOutput> &iter_output,
         const SmartPtr<HessianUpdater> &hessian_updater,
+        const SmartPtr<L1ExactPenaltyRhoUpdater> &l1exactpenalty_rho_updater,
         const SmartPtr<EqMultiplierCalculator> &eq_multiplier_calculator)
         : search_dir_calculator_(search_dir_calculator),
         line_search_(line_search),
@@ -31,7 +32,9 @@ IpL1IpoptAlg::IpL1IpoptAlg(
         iterate_initializer_(iterate_initializer),
         iter_ouput_(iterate_initializer),
         hessian_updater_(hessian_updater),
-        eq_multiplier_calculator_(eq_multiplier_calculator)
+        eq_multiplier_calculator_(eq_multiplier_calculator),
+        l1exactpenalty_rho_updater_(l1exactpenalty_rho_updater)
+
 {
     DBG_START_METH("IpL1IpoptAlg::IpL1IpoptAlg", dbg_verbosity);
     DBG_ASSERT(IsValid(search_dir_calculator_));
@@ -96,6 +99,8 @@ bool IpL1IpoptAlg::InitializeImpl(const OptionsList &options,
     retvalue = hessian_updater_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), *my_options, prefix);
     ASSERT_EXCEPTION(retvalue, FAILED_INITIALIZATION,
                      "The hessian_updater strategy failed to initialize.");
+
+    retvalue = l1exactpenalty_rho_updater_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), *my_options, prefix);
 
     my_options->GetNumericValue("kappa_sigma", kappa_sigma_, prefix);
     if(!my_options->GetBoolValue("recalc_y", recalc_y_, prefix))
@@ -188,7 +193,7 @@ SolverReturn IpL1IpoptAlg::Optimize(bool isResto)
                     THROW_EXCEPTION(STEP_COMPUTATION_FAILED, "Step computation failed.");
                 }
             }
-            compute_rho_trial();
+            ComputeRhoTrial();
 
             IpData().TimingStats().ComputeAcceptableTrialPoint().Start();
             ComputeAcceptableTrialPoint();
@@ -203,6 +208,8 @@ SolverReturn IpL1IpoptAlg::Optimize(bool isResto)
             IpData().TimingStats().CheckConvergence().Start();
             conv_status = conv_check_->CheckConvergence();
             IpData().TimingStats().CheckConvergence().End();
+
+            UpdateRhoAction();
         }
 
         IpData().TimingStats().OutputIteration().Start();
@@ -751,8 +758,16 @@ void IpL1IpoptAlg::print_copyright_message(
     copyright_message_printed = true;
 }
 
-void IpL1IpoptAlg::compute_rho_trial()
-{}
+void IpL1IpoptAlg::ComputeRhoTrial()
+{
+    l1exactpenalty_rho_updater_->UpdateRhoTrial();
+}
+
+void IpL1IpoptAlg::UpdateRhoAction()
+{
+    l1exactpenalty_rho_updater_->UpdateRhoAction();
+}
+
 
 }
 

@@ -30,4 +30,10 @@ void L1ExactPenaltyRestoData::AcceptTrialPoint()
 
 }
 
+void L1ExactPenaltyRestoData::AcceptRhoTrial()
+{
+    rho_ = rho_trial_;
+    rho_trial_ = 0.;
+}
+
 }

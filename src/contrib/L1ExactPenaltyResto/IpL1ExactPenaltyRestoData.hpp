@@ -26,29 +26,36 @@ public:
     bool InitializeDataStructures() override;
     void AcceptTrialPoint() override;
 
-    Number CurrentRho() const {
+    Number GetCurrentRho() const {
         return rho_;
-    }
-
-    Number SetRho(Number rho) {
-        rho_ = rho;
-        rho_initialized_ = true;
-        rho_has_changed_ = true;
     }
 
     void SetRhoTrial(Number rho){
         rho_trial_ = rho;
     }
 
-    void SetRhoUnchanged() {
-        rho_has_changed_ = false;
+    void SetRhoStatus(bool stat) {
+        rho_has_changed_ = stat;
     }
+
+    bool GetRhoStatus() const
+    {
+        return rho_has_changed_;
+    }
+
+    void AcceptRhoTrial();
 
 private:
     Number rho_;
     Number rho_trial_;
     bool rho_initialized_ = true;
     bool rho_has_changed_ = true;
+
+    Number SetRho(Number rho) {
+        rho_ = rho;
+        rho_initialized_ = true;
+        rho_has_changed_ = true;
+    }
 
 };
 }

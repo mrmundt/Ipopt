@@ -111,7 +111,7 @@ Number L1ExactPenaltyRestoCQ::curr_f()
     std::vector<Number> sdeps(1);
 
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     sdeps[0] = rho;
 
     if(!curr_f_cache_l1_.GetCachedResult(result, tdeps, sdeps)){
@@ -133,7 +133,7 @@ Number L1ExactPenaltyRestoCQ::trial_f()
     SmartPtr<const Vector> x = ip_data_l1_->trial()->x();
 
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
-    Number rho = l1data.CurrentRho();
+    Number rho = l1data.GetCurrentRho();
 
     DBG_PRINT_VECTOR(2, "trial_x", *x);
     DBG_PRINT((1, "trial_x tag = %u\n", x-GetTag()));
@@ -162,7 +162,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_f()
     SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
 
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
-    Number rho = l1data.CurrentRho();
+    Number rho = l1data.GetCurrentRho();
 
     std::vector<const TaggedObject*> tdeps(1);
     tdeps[0] = GetRawPtr(x);
@@ -187,7 +187,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_f()
     SmartPtr<const Vector> x = ip_data_l1_->trial()->x();
 
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
-    Number rho = l1data.CurrentRho();
+    Number rho = l1data.GetCurrentRho();
 
     std::vector<const TaggedObject*> tdeps(1);
     tdeps[0] = GetRawPtr(x);
@@ -224,7 +224,7 @@ Number L1ExactPenaltyRestoCQ::CalcBarrierTermL1(
     Number scale_fact = 1.;
     if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type() )
     {
-        scale_fact = 1./L1EPRestoData().CurrentRho();
+        scale_fact = 1./ L1EPRestoData().GetCurrentRho();
     }
 
     Number retval = 0.;
@@ -298,7 +298,7 @@ Number L1ExactPenaltyRestoCQ::curr_barrier_obj()
     tdeps[1] = GetRawPtr(s);
 
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(2);
     sdeps[0] = mu;
     sdeps[1] = rho;
@@ -333,7 +333,7 @@ Number L1ExactPenaltyRestoCQ::trial_barrier_obj()
     tdeps[1] = GetRawPtr(s);
 
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(2);
     sdeps[0] = mu;
     sdeps[1] = rho;
@@ -364,7 +364,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_x()
     std::vector<const TaggedObject*> tdeps(1);
     tdeps[0] = GetRawPtr(x);
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(2);
     sdeps[0] = mu;
     sdeps[1] = rho;
@@ -428,7 +428,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
     std::vector<const TaggedObject*> tdeps(1);
     tdeps[0] = GetRawPtr(s);
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(2);
 
     sdeps[0] = mu;
@@ -493,7 +493,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()
     tdeps[0] = GetRawPtr(ip_nlp_l1_->Px_L());
     tdeps[1] = GetRawPtr(ip_nlp_l1_->Px_U());
     std::vector<Number> sdeps(1);
-    sdeps[0] = L1EPRestoData().CurrentRho();
+    sdeps[0] = L1EPRestoData().GetCurrentRho();
     if( !grad_kappa_times_damping_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
         SmartPtr<Vector> tmp1 = x->MakeNew();
@@ -532,7 +532,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_s()
     tdeps[0] = GetRawPtr(ip_nlp_l1_->Pd_L());
     tdeps[1] = GetRawPtr(ip_nlp_l1_->Pd_U());
     std::vector<Number> sdeps(1);
-    sdeps[0] = L1EPRestoData().CurrentRho();
+    sdeps[0] = L1EPRestoData().GetCurrentRho();
     if( !grad_kappa_times_damping_s_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
         SmartPtr<Vector> tmp1 = s->MakeNew();
@@ -573,14 +573,14 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
 
     if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
     {
-        scale = 1./L1ExactPenaltyRestoData().CurrentRho();
+        scale = 1./ L1ExactPenaltyRestoData().GetCurrentRho();
         DBG_PRINT((2, "Inverse scaling! \n"));
     }
     std::vector<const TaggedObject*> tdeps(1);
     tdeps[0] = NULL ;
 
     std::vector<Number> sdeps(1);
-    sdeps[0] = L1ExactPenaltyRestoData().CurrentRho();
+    sdeps[0] = L1ExactPenaltyRestoData().GetCurrentRho();
     dampind_s_U_cache_l1_.GetCachedResult(result, tdeps, sdeps);
 
     DBG_PRINT((2, "scale_damping_l1_ = %e\n", scale));
@@ -676,7 +676,7 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoCQ::curr_exact_hessian()
     tdeps[1] = GetRawPtr(y_c);
     tdeps[2] = GetRawPtr(y_d);
 
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(1);
     sdeps[0] = rho;
 
@@ -701,7 +701,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
     SmartPtr<const Vector> z_L = ip_data_l1_->curr()->z_L();
     SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
 
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
 
     std::vector<const TaggedObject*> tdeps(5);
     tdeps[0] = GetRawPtr(x);
@@ -765,7 +765,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
     SmartPtr<const Vector> z_L = ip_data_l1_->trial()->z_L();
     SmartPtr<const Vector> z_U = ip_data_l1_->trial()->z_U();
 
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
 
     std::vector<const TaggedObject*> tdeps(5);
     tdeps[0] = GetRawPtr(x);
@@ -832,7 +832,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_s()
     deps[1] = GetRawPtr(v_L);
     deps[2] = GetRawPtr(v_U);
 
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(1);
     sdeps[0] = rho;
 
@@ -871,7 +871,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_s()
     deps[1] = GetRawPtr(v_L);
     deps[2] = GetRawPtr(v_U);
 
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(1);
     sdeps[0] = rho;
 
@@ -916,7 +916,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_x()
     SmartPtr<const Vector> z_L = ip_data_l1_->curr()->z_L();
     SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<const TaggedObject*> deps(5);
     deps[0] = GetRawPtr(x);
     deps[1] = GetRawPtr(y_c);
@@ -972,7 +972,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
     deps[2] = GetRawPtr(v_U);
 
     Number mu = ip_data_l1_->curr_mu();
-    Number rho = L1EPRestoData().CurrentRho();
+    Number rho = L1EPRestoData().GetCurrentRho();
     std::vector<Number> sdeps(2);
     sdeps[0] = mu;
     sdeps[1] = rho;

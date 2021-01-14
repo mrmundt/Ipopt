@@ -17,6 +17,7 @@
 #include "IpAlgTypes.hpp"
 #include "IpHessianUpdater.hpp"
 #include "IpEqMultCalculator.hpp"
+#include "IpL1ExactPenaltyRhoUpdater.hpp"
 
 namespace Ipopt
 {
@@ -33,8 +34,8 @@ public:
             const SmartPtr<IterateInitializer>&        iterate_initializer,
             const SmartPtr<IterationOutput>&           iter_output,
             const SmartPtr<HessianUpdater>&            hessian_updater,
-            const SmartPtr<EqMultiplierCalculator>&    eq_multiplier_calculator = NULL
-            );
+            const SmartPtr<L1ExactPenaltyRhoUpdater>&  l1exactpenalty_rho_updater,
+            const SmartPtr<EqMultiplierCalculator>&    eq_multiplier_calculator = NULL);
 
     ~IpL1IpoptAlg() override;
 
@@ -71,6 +72,7 @@ private:
     SmartPtr<HessianUpdater> hessian_updater_;
 
     SmartPtr<EqMultiplierCalculator> eq_multiplier_calculator_;
+    SmartPtr<L1ExactPenaltyRhoUpdater> l1exactpenalty_rho_updater_;
 
     void UpdateHessian();
     bool UpdateBarrierParameter();
@@ -107,8 +109,8 @@ private:
             SmartPtr<const Vector>& new_trial_z
     );
 
-    void compute_rho_trial();
-    void update_rho();
+    void ComputeRhoTrial();
+    void UpdateRhoAction();
 };
 }
 

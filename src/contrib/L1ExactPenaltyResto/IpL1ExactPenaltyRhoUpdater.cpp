@@ -2,25 +2,24 @@
 // Created by David on 1/9/2021.
 //
 
-#include "IpL1ExactPenaltyRho.hpp"
+#include "IpL1ExactPenaltyRhoUpdater.hpp"
 #include "IpCompoundVector.hpp"
 #include "IpCompoundSymMatrix.hpp"
 #include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
 
 namespace Ipopt
 {
-bool L1ExactPenaltyRho::InitializeImpl(const OptionsList &options,
+bool L1ExactPenaltyRhoUpdater::InitializeImpl(const OptionsList &options,
                                               const std::string &prefix) {
     return false;
 }
 
 
-
-Number L1ExactPenaltyRho::ComputeRhoTrial()
+Number L1ExactPenaltyRhoUpdater::ComputeRhoTrial()
 {
 
     if (l1_epr_update_kind_ == CONST)
-    {return l1exactpenalty_rho0_;} // if fixed
+    {return l1_epr_rho0_;} // if fixed
 
     // rho
     Number rho_trial;
@@ -64,12 +63,14 @@ Number L1ExactPenaltyRho::ComputeRhoTrial()
     SmartPtr<const Vector> d_minus_s_R = IpCq().curr_d_minus_s();
     SmartPtr<const CompoundVector> cC = dynamic_cast<const CompoundVector*>(GetRawPtr(c_R));
     SmartPtr<const CompoundVector> dmsC = dynamic_cast<const CompoundVector*>(GetRawPtr(d_minus_s_R));
+
     SmartPtr<Vector> c = cC->GetComp(0)->MakeNewCopy();
     SmartPtr<Vector> dms = dmsC->GetComp(0)->MakeNewCopy();
-    c->AddOneVector(-1.0, *nplusc, 1.0);
-    c->AddOneVector(1.0, *pplusc, 1.0);
-    dms->AddOneVector(-1.0, *nplusd, 1.0);
-    dms->AddOneVector(1.0, *pplusd, 1.0);
+
+    c->AddTwoVectors(-1., *nplusc, 1.,  *pplusc, 1.);
+    dms->AddTwoVectors(-1., *nplusd, 1., *pplusd, 1.);
+
+
     // ck
     Number ck = IpCq().CalcNormOfType(NORM_1, *c, *dms);
 
@@ -83,9 +84,9 @@ Number L1ExactPenaltyRho::ComputeRhoTrial()
     pplusd->AddOneVector(+1., *nplusd, 1.0);
     Number ppnp = pplusc->Sum() + pplusd->Sum();
     ////
-    Number dxWxdx = 0.0;
-    Number dsWsdx = 0.0;
-    Number sigW = 0.0;
+    Number dxWxdx = 0.;
+    Number dsWsdx = 0.;
+    Number sigW = 0.;
     //THROW_EXCEPTION(DAVS, "fail\n");
     //ASSERT_EXCEPTION(false, DAVS,"fail");
     if (!(l1_epr_update_kind_ == LINEAR)) { // :(
@@ -129,31 +130,32 @@ Number L1ExactPenaltyRho::ComputeRhoTrial()
         dss->Scal(0.5);
         dss->ElementWiseMultiply(*sigma_s);
         // put condition here
-        if (l1_epr_update_kind_ == QUADNOSIGMA) { // :(
+        if (l1_epr_update_kind_ == QUADNOSIGNA)
+        {
             dss->Set(0.0);
         }
         dsWsdx = dss->Dot(*ds);
         // sigma_w
-        if ((dxWxdx + dsWsdx) > 0.) {
+        if ((dxWxdx + dsWsdx) > 0.)
+        {
             sigW = 1;
         }
     }
-    DBG_PRINT((0, "denominator %8.2e\n", (1.0-epsilon_l1_) * ck - ppnp));
+    DBG_PRINT((0, "denominator %8.2e\n", (1.0-l1_epr_epsi_) * ck - ppnp));
 
     // grad_barrier parts
     Number dphidx = grad_phi_x->Dot(*dx);
     Number dphids = grad_phi_s->Dot(*ds);
     DBG_PRINT((0, "directional %8.2e\n", dphidx + dphids));
-    rho_trial = ((dxWxdx + dsWsdx) * sigW + dphidx + dphids)/((1.0-epsilon_l1_) * ck - ppnp);
-    sufficient_feasibility_ = ((1.0 - epsilon_l1_) * ck - ppnp) > 0;
-    DBG_PRINT((2,"(1-%e)||c|| - (p+n)e=%e \n", epsilon_l1_,(1.0-epsilon_l1_) * ck - ppnp));
+    rho_trial = ((dxWxdx + dsWsdx) * sigW + dphidx + dphids)/((1.0-l1_epr_epsi_) * ck - ppnp);
+    l1_epr_suff_feasib_update_ = ((1.0 - l1_epr_epsi_) * ck - ppnp) > 0;
+    DBG_PRINT((2,"(1-%e)||c|| - (p+n)e=%e \n", l1_epr_epsi_,(1.0-l1_epr_epsi_) * ck - ppnp));
     trial_rho_cache_.AddCachedResult(rho_trial, tdeps, sdeps);  // ToDo have this working properly
     return rho_trial;
 
-    return 0;
 }
 
-SumSymMatrix &L1ExactPenaltyRho::Tmp_Wx_Sigma_x() {
+SumSymMatrix &L1ExactPenaltyRhoUpdater::Tmp_Wx_Sigma_x() {
     if (!IsValid(Hx_Sigma_x_))
     {
         // Create the new Matrix
@@ -162,7 +164,7 @@ SumSymMatrix &L1ExactPenaltyRho::Tmp_Wx_Sigma_x() {
     return *Hx_Sigma_x_;
 }
 
-void L1ExactPenaltyRho::SetMatrixSpaces()
+void L1ExactPenaltyRhoUpdater::SetMatrixSpaces()
 {
     // Make new matrix by using the original h_space
     auto* IpL1NLP = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP());
@@ -202,7 +204,7 @@ void L1ExactPenaltyRho::SetMatrixSpaces()
 
 }
 
-DiagMatrix &L1ExactPenaltyRho::Tmp_Sigma_x()
+DiagMatrix &L1ExactPenaltyRhoUpdater::Tmp_Sigma_x()
 {
     if (!IsValid(Sigma_x_))
     {
@@ -210,6 +212,44 @@ DiagMatrix &L1ExactPenaltyRho::Tmp_Sigma_x()
     }
     return *Sigma_x_;
 }
+
+void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
+    Number trial_rho = ComputeRhoTrial();
+    Number old_rho;
+    Number new_rho;
+
+    l1_epr_has_changed_ = true;
+
+    if (old_rho < trial_rho)
+    {
+        new_rho = trial_rho + 1.;
+    }
+    else if (!l1_epr_suff_feasib_update_ && old_rho < l1_epr_max_rho)
+    {
+        new_rho = l1_epr_max_rho < old_rho * 2. ? l1_epr_max_rho : old_rho * 2.;
+    }
+    else
+    {
+        l1_epr_has_changed_ = false;
+    }
+    L1EPRAddData().SetRhoTrial(new_rho);
+    L1EPRAddData().SetRhoStatus(l1_epr_has_changed_);
+
+    }
+
+    void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
+    {
+    L1EPRAddData().AcceptRhoTrial();
+    // reset filter!;
+    }
+
+
+L1ExactPenaltyRestoData &L1ExactPenaltyRhoUpdater::L1EPRAddData()
+{
+    auto retval = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData());
+    return *retval;
+}
+
 
 }
 
