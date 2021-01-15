@@ -11,7 +11,7 @@ namespace Ipopt
 {
 bool L1ExactPenaltyRhoUpdater::InitializeImpl(const OptionsList &options,
                                               const std::string &prefix) {
-    return false;
+    SetMatrixSpaces();
 }
 
 

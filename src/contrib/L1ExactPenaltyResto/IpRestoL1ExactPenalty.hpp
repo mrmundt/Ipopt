@@ -2,11 +2,12 @@
 // Created by David on 1/14/2021.
 //
 
-#ifndef SRC_RESTOL1EXACTPENALTY_HPP
-#define SRC_RESTOL1EXACTPENALTY_HPP
+#ifndef SRC_IPRESTOL1EXACTPENALTY_HPP
+#define SRC_IPRESTOL1EXACTPENALTY_HPP
 
 #include "IpRestoPhase.hpp"
 #include "IpL1IpoptAlg.hpp"
+#include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
 #include "IpEqMultCalculator.hpp"
 
 namespace Ipopt {
@@ -44,6 +45,7 @@ private:
     Number constr_viol_tol_;
     Number resto_failure_feasibility_threshold_;
     Index count_restorations_;
+
     void ComputeBoundMultiplierStep(
             Vector&       delta_z,
             const Vector& curr_z,
@@ -54,4 +56,4 @@ private:
 };
 }
 
-#endif //SRC_RESTOL1EXACTPENALTY_HPP
+#endif //SRC_IPRESTOL1EXACTPENALTY_HPP

@@ -7,26 +7,27 @@
 
 namespace Ipopt
 {
-    L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
-            IpoptNLP &orig_ip_nlp, IpoptData &orig_ip_data,
-            IpoptCalculatedQuantities &orig_ip_cq)
-            : RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq)
-    {
-        SmartPtr<OrigIpoptNLP> mynlp = static_cast<OrigIpoptNLP*>(&OrigIpNLP());
-        SmartPtr<IpoptNLP> mynlp2 = &OrigIpNLP();
-        Number mycpu = mynlp->TotalFunctionEvaluationCpuTime();
-        std::cout << mycpu << std::endl;
-        RestoIpoptNLP::f_evals();
-    }
+L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
+        IpoptNLP &orig_ip_nlp,
+        IpoptData &orig_ip_data,
+        IpoptCalculatedQuantities &orig_ip_cq)
+        : RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq)
+{
+    SmartPtr<OrigIpoptNLP> mynlp = static_cast<OrigIpoptNLP*>(&OrigIpNLP());
+    SmartPtr<IpoptNLP> mynlp2 = &OrigIpNLP();
+    Number mycpu = mynlp->TotalFunctionEvaluationCpuTime();
+    std::cout << mycpu << std::endl;
+    RestoIpoptNLP::f_evals();
+}
 
-    L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
-    { }
+L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
+{ }
 
     void L1ExactPenaltyRestoIpoptNLP::RegisterOptions(
             SmartPtr<RegisteredOptions> roptions
     )
     {
-        roptions->SetRegisteringCategory("l1 Exact Penalty")
+        roptions->SetRegisteringCategory("l1 Exact Penalty");
         roptions->AddStringOption2(
             "l1exactpenalty_objective_type",
             "Choose where to put the rho term phi(x,rho) = f + rho ||c||1 (constraint) vs 1/rho f(x) + ||c||1",
@@ -34,7 +35,7 @@ namespace Ipopt
             "constraint", "phi(x,rho) = f(x) + rho ||c(x)||1",
             "objective_inv", "phi(x,rho) = (1/rho) * f(x) + ||c(x)||1",
             "long desc"
-            )
+            );
     }
 
     bool L1ExactPenaltyRestoIpoptNLP::Initialize(

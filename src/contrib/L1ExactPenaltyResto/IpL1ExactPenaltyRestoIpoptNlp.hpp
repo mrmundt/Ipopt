@@ -21,7 +21,7 @@ public:
     ~L1ExactPenaltyRestoIpoptNLP() noexcept;
 
     virtual bool Initialize(
-        const Journalist& jnlst;
+        const Journalist& jnlst,
         const OptionsList& options,
         const std::string& prefix
     ) override;
