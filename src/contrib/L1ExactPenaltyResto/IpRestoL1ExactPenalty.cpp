@@ -104,5 +104,175 @@ bool RestoL1ExactPenalty::PerformRestoration()
         }
         retval = 0;
     }
+    else if( l1_status == STOP_AT_TINY_STEP || l1_status == STOP_AT_ACCEPTABLE_POINT)
+    {
+        Number orig_primal_inf = IpCq().curr_primal_infeasibility(NORM_MAX);
+
+        if( orig_primal_inf <= IpData().tol() )
+        {
+            Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
+                           "Restoration phase converged to a point with small primal infeasibility.\n"
+                           "Original primal inf is less than the tolerance.");
+            //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
+            //                "Restoration phase converged to a point with small primal infeasibility");
+            retval = 0;
+        }
+        else
+        {
+            THROW_EXCEPTION(LOCALLY_INFEASIBLE, "Restoration phase converged to a point of local infeasibility");
+        }
+    }
+    else if ( l1_status == MAXITER_EXCEEDED)
+    {
+        THROW_EXCEPTION(RESTORATION_MAXITER_EXCEEDED,
+                        "Maximal number of iteration exceeded in restoration phase.");
+    }
+    else if (l1_status == CPUTIME_EXCEEDED)
+    {
+        THROW_EXCEPTION(RESTORATION_CPUTIME_EXCEEDED,
+                        "Maximal CPU time exceeded in restoration phase.");
+    }
+    else if (l1_status == LOCAL_INFEASIBILITY)
+    {
+        THROW_EXCEPTION(LOCALLY_INFEASIBLE,
+                        "Restoration phase converged to a point of local infeasibility");
+    }
+    else if (l1_status == RESTORATION_FAILURE)
+    {
+        Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
+                       "Restoration phase in the restoraion phase failed.");
+        THROW_EXCEPTION(RESTORATION_FAILED, "Restoration phase in the restoration phase failed.")
+    }
+    else if (l1_status == USER_REQUESTED_STOP)
+    {
+        THROW_EXCEPTION(RESTORATION_USER_STOP, "User requested stop during restoration phase.");
+    }
+    else
+    {
+        Jnlst().Printf(J_ERROR, J_MAIN,
+                       "Unknown return status.\n I.e. not SUCCESS, MAXITER_EXCEED, RESTO_CPU_EXCEED, LOCAL_INFES, RESTO_FAIL so far.");
+        retval = 1;
+    }
+    if (retval == 0)
+    {
+        SmartPtr<const Vector> l1_curr_x = l1_ip_data->curr()->x();
+        SmartPtr<const CompoundVector> cx = dynamic_cast<const CompoundVector*>(GetRawPtr(l1_curr_x));
+        DBG_ASSERT(cx);
+
+        SmartPtr<const Vector> l1_curr_s = l1_ip_data->curr()->s();
+        SmartPtr<const CompoundVector> cs = dynamic_cast<const CompoundVector*>(GetRawPtr(l1_curr_s));
+
+        SmartPtr<IteratesVector> trial = IpData().trial()->MakeNewContainer();
+        trial->Set_primal(*cx->GetComp(0), *cs->GetComp(0));
+        IpData().set_trial(trial);
+
+        if (IpCq().IsSquareProblem())
+        {
+            Number const_viol = IpCq().unscaled_curr_nlp_constraint_violation(NORM_MAX);
+
+            if(const_viol <= constr_viol_tol_)
+            {
+                Jnlst().Printf(J_DETAILED, J_LINE_SEARCH,
+                               "Recursive restoration phase algorithm terminated successfully for square problem.\n");
+                IpData().AcceptTrialPoint();
+                THROW_EXCEPTION(FEASIBILITY_PROBLEM_SOLVED,
+                                "Restoration phase converged to sufficiently feasible point of original square problem\n")
+            }
+        }
+
+        SmartPtr<IteratesVector> delta = IpData().curr()->MakeNewIteratesVector(true);
+        delta->Set(0.);
+        ComputeBoundMultiplierStep(*delta->z_L_NonConst(),
+                                   *IpData().curr()->z_L(),
+                                   *IpCq().curr_slack_x_L(),
+                                   *IpCq().trial_slack_x_L());
+        ComputeBoundMultiplierStep(*delta->z_U_NonConst(),
+                                   *IpData().curr()->z_U(),
+                                   *IpCq().curr_slack_x_U(),
+                                   *IpCq().trial_slack_s_L());
+        ComputeBoundMultiplierStep(*delta->v_L_NonConst(),
+                                   *IpData().curr()->v_L(),
+                                   *IpCq().curr_slack_s_L(),
+                                   *IpCq().trial_slack_s_L());
+        ComputeBoundMultiplierStep(*delta->v_U_NonConst(),
+                                   *IpData().curr()->v_U(),
+                                   *IpCq().curr_slack_s_U(),
+                                   *IpCq().trial_slack_s_U());
+
+        DBG_PRINT_VECTOR(1, "delta_z_L", *delta->z_L());
+        DBG_PRINT_VECTOR(1, "delta_z_U", *delta->z_U());
+        DBG_PRINT_VECTOR(1, "delta_v_L", *delta->v_L());
+        DBG_PRINT_VECTOR(1, "delta_v_U", *delta->v_U());
+
+        Number alpha_dual = IpCq().dual_frac_to_the_bound(IpData().curr_tau(),
+                                                          *delta->z_L_NonConst(),
+                                                          *delta->z_U_NonConst(),
+                                                          *delta->v_L_NonConst(),
+                                                          *delta->v_U_NonConst());
+
+        Jnlst().Printf(J_DETAILED, J_LINE_SEARCH,
+                       "Step size for bound multipliers: %8.2\n", alpha_dual);
+
+        IpData().SetTrialBoundMultipliersFromStep(alpha_dual,
+                                                  *delta->z_L(),
+                                                  *delta->z_U(),
+                                                  *delta->v_L(),
+                                                  *delta->v_U());
+
+        Number bound_mult_max = Max(IpData().trial()->z_L()->Amax(),
+                                    IpData().trial()->z_U()->Amax(),
+                                    IpData().trial()->v_L()->Amax(),
+                                    IpData().trial()->v_U()->Amax());
+        if (bound_mult_max > bound_mult_reset_threshold_)
+        {
+            trial = IpData().trial()->MakeNewContainer();
+            Jnlst().Printf(J_DETAILED, J_LINE_SEARCH,
+                           "Bound multiplier after restoration phase too large (max=%8.2e). Set all to 1.\n", bound_mult_max);
+            trial->create_new_z_L();
+            trial->create_new_z_U();
+            trial->create_new_v_L();
+            trial->create_new_v_U();
+            trial->z_L_NonConst()->Set(1.);
+            trial->z_U_NonConst()->Set(1.);
+            trial->v_L_NonConst()->Set(1.);
+            trial->v_U_NonConst()->Set(1.);
+            IpData().set_trial(trial);
+        }
+
+        DefaultIterateInitializer::least_square_mults(Jnlst(),
+                                                      IpNLP(),
+                                                      IpData(),
+                                                      IpCq(),
+                                                      eq_mult_calculator_,
+                                                      constr_mult_reset_threshold_);
+
+        DBG_PRINT_VECTOR(2, "y_c", *IpData().curr()->y_c());
+        DBG_PRINT_VECTOR(2, "y_d", *IpData().curr()->y_d());
+
+        IpData().Set_iter_count(l1_ip_data->iter_count() - 1 );
+
+        IpData().Set_info_skip_output(true);
+        IpData().Set_info_iters_since_header(l1_ip_data->info_iters_since_header());
+        IpData().Set_info_last_output(l1_ip_data->info_last_output());
+
+    }
+    return (retval == 0);
 }
+
+void RestoL1ExactPenalty::ComputeBoundMultiplierStep(Vector &delta_z,
+                                                     const Vector &curr_z,
+                                                     const Vector &curr_slack,
+                                                     const Vector &trial_slack)
+{
+    Number mu = IpData().curr_mu();
+
+    delta_z.Copy(curr_slack);
+    delta_z.Axpy(-1., trial_slack);
+    delta_z.ElementWiseMultiply(curr_z);
+    delta_z.AddScalar(mu);
+    delta_z.ElementWiseDivide(curr_slack);
+    delta_z.Axpy(-1., curr_z);
+}
+
+
 }
