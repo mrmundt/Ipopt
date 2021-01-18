@@ -4,14 +4,19 @@
 
 #include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
 #include "IpSumSymMatrix.hpp"
+#include "IpL1ExactPenaltyRestoData.hpp"
+
 
 namespace Ipopt
 {
 L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
         IpoptNLP &orig_ip_nlp,
         IpoptData &orig_ip_data,
-        IpoptCalculatedQuantities &orig_ip_cq)
-        : RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq)
+        IpoptCalculatedQuantities &orig_ip_cq,
+        const SmartPtr<IpoptData>& l1_ip_data)
+        :
+        RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq),
+        l1_ip_data_(l1_ip_data)
 {
     SmartPtr<OrigIpoptNLP> mynlp = static_cast<OrigIpoptNLP*>(&OrigIpNLP());
     SmartPtr<IpoptNLP> mynlp2 = &OrigIpNLP();
@@ -45,13 +50,13 @@ L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
     {
         Index l1_int;
         options.GetEnumValue("l1exactpenalty_objective_type", l1_int, prefix);
-        l1_exact_penalty_objective_type_ = L1PenaltyObjectiveType(l1_int);
+        l1_epr_objective_type_ = L1PenaltyObjectiveType(l1_int);
         return IpoptNLP::Initialize(jnlst, options, prefix);
     }
 
-    bool L1ExactPenaltyRestoIpoptNLP::l1exactpenalty_inv_objective_type() const
+    bool L1ExactPenaltyRestoIpoptNLP::l1_epr_inv_objective_type() const
     {
-        return l1_exact_penalty_objective_type_ == OBJECTIVE_INV;
+        return l1_epr_objective_type_ == OBJECTIVE_INV;
     }
 
 
@@ -67,7 +72,7 @@ L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
         Number fact_f = 1.0;
         Number fact_c = 1.0;
         // Get the factors
-        if (l1_exact_penalty_type_ == OBJECTIVE_INV)
+        if (l1_epr_objective_type_ == OBJECTIVE_INV)
         {
             fact_f = 1./rho;
         }
@@ -93,7 +98,7 @@ L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
     {
         Number fact_f = 1.0;
         Number fact_c = 1.0;
-        if (l1_exact_penalty_objective_type_ == OBJECTIVE_INV)
+        if (l1_epr_objective_type_ == OBJECTIVE_INV)
         {
             fact_f = 1/rho;
         }
@@ -127,7 +132,7 @@ L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
     {
         Number fact_f = 1.0;
         Number fact_c = 1.0;
-        if (l1_exact_penalty_objective_type_ == OBJECTIVE_INV)
+        if (l1_epr_objective_type_ == OBJECTIVE_INV)
         {
             fact_f = 1/rho;
         }
@@ -185,6 +190,17 @@ L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
 //            h_sum->SetTerm(1, 1.0,);
         }
         return GetRawPtr(retPtr);
+    }
+
+    Number L1ExactPenaltyRestoIpoptNLP::Rho() const {
+        L1ExactPenaltyRestoData* l1_epr_data = dynamic_cast<L1ExactPenaltyRestoData*>(&l1_ip_data_->AdditionalData());
+        Number rho0 = l1_epr_data->GetCurrentRho();
+        if (l1_epr_inv_objective_type() == OBJECTIVE_INV)
+        {
+            rho0 = 1.; // It has to be 1 for the RestoResto
+        }
+
+        return rho0;
     }
 
 }

@@ -5,10 +5,13 @@
 #ifndef SRC_IPL1EXACTPENALTYRHOUPDATER_HPP
 #define SRC_IPL1EXACTPENALTYRHOUPDATER_HPP
 
+
+
 #include "IpAlgStrategy.hpp"
 #include "IpSumSymMatrix.hpp"
 #include "IpDiagMatrix.hpp"
 #include "IpL1ExactPenaltyRestoData.hpp"
+
 
 namespace Ipopt
 {
@@ -28,6 +31,12 @@ public:
 
     void UpdateRhoTrial();
     void UpdateRhoAction();
+    enum RhoUpdateKind{
+        QUAD=0,
+        QUADNOSIGNA,
+        LINEAR,
+        CONST
+    };
 
 private:
     L1ExactPenaltyRhoUpdater(
@@ -39,13 +48,6 @@ private:
             );
 
     CachedResults<Number> trial_rho_cache_;
-
-    enum RhoUpdateKind{
-        QUAD=0,
-        QUADNOSIGNA,
-        LINEAR,
-        CONST
-    };
 
     RhoUpdateKind l1_epr_update_kind_;
     Number l1_epr_rho0_;

@@ -222,7 +222,7 @@ Number L1ExactPenaltyRestoCQ::CalcBarrierTermL1(
     DBG_PRINT_VECTOR(2, "slack_s_U", slack_s_U);
 
     Number scale_fact = 1.;
-    if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type() )
+    if(L1EPRestoNlp()->l1_epr_inv_objective_type() )
     {
         scale_fact = 1./ L1EPRestoData().GetCurrentRho();
     }
@@ -383,7 +383,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_x()
         Tmp_x_U_l1().Set(1.0);
         ip_nlp_l1_->Px_U()->AddMSinvZ(mu, *curr_slack_x_U(), Tmp_x_U_l1(), *tmp2);
 
-        if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        if(L1EPRestoNlp()->l1_epr_inv_objective_type())
         {
             CompoundVector* Ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
             SmartPtr<Vector> Ctmp2_xonly = Ctmp2->GetCompNonConst(0);
@@ -449,7 +449,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
         ip_nlp_l1_->Pd_U()->AddMSinvZ(mu, *curr_slack_s_U(), Tmp_s_U_l1(), *tmp1);
 
         // rho part.
-        if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+        if(L1EPRestoNlp()->l1_epr_inv_objective_type())
         {
             tmp1->Scal(1/rho);
         }
@@ -571,7 +571,7 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
     Number scale = 1.0;
     SmartPtr<const Vector> result;
 
-    if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+    if(L1EPRestoNlp()->l1_epr_inv_objective_type())
     {
         scale = 1./ L1ExactPenaltyRestoData().GetCurrentRho();
         DBG_PRINT((2, "Inverse scaling! \n"));
@@ -724,7 +724,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
             DBG_PRINT_VECTOR(2, "jac_cT*y_c", *curr_jac_cT_times_curr_y_c());
             DBG_PRINT_VECTOR(2, "jac_dT*y_d", *curr_jac_dT_times_curr_y_d());
 
-            if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+            if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
@@ -788,7 +788,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
             DBG_PRINT_VECTOR(2, "jac_cT*y_c", *curr_jac_cT_times_curr_y_c());
             DBG_PRINT_VECTOR(2, "jac_dT*y_d", *curr_jac_dT_times_curr_y_d());
 
-            if( L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+            if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
@@ -843,7 +843,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_s()
             SmartPtr<Vector> tmp = y_d->MakeNew();
             ip_nlp_l1_->Pd_U()->MultVector(1., *v_U, 0., *tmp);
             ip_nlp_l1_->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
-            if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+            if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {
                 tmp->Scal(1/rho);
             }
@@ -882,7 +882,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_s()
             SmartPtr<Vector> tmp = y_d->MakeNew();
             ip_nlp_l1_->Pd_U()->MultVector(1., *v_U, 0., *tmp);
             ip_nlp_l1_->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
-            if(L1EPRestoNlp()->l1exactpenalty_inv_objective_type())
+            if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {
                 tmp->Scal(1/rho);
             }

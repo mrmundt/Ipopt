@@ -9,13 +9,16 @@
 
 namespace Ipopt
 {
+
+
 class L1ExactPenaltyRestoIpoptNLP : public RestoIpoptNLP
 {
 public:
     L1ExactPenaltyRestoIpoptNLP(
             IpoptNLP&   orig_ip_nlp,
             IpoptData&  orig_ip_data,
-            IpoptCalculatedQuantities&  orig_ip_cq
+            IpoptCalculatedQuantities&  orig_ip_cq,
+            const SmartPtr<IpoptData>& l1_ip_data
     );
 
     ~L1ExactPenaltyRestoIpoptNLP() noexcept;
@@ -35,7 +38,8 @@ public:
         OBJECTIVE_INV
     };
 
-    bool l1exactpenalty_inv_objective_type() const;
+    bool l1_epr_inv_objective_type() const;
+    //l1_epr_suff_feasib_update_
 
     Number f(const Vector &x) override;
     Number f(const Vector &x, Number rho) override;
@@ -65,11 +69,16 @@ public:
         return true;
     }
 
-
+    Number Rho() const override;
 
 
 private:
-    IpL1ExactPenaltyObjectiveType l1_exact_penalty_objective_type_;
+    IpL1ExactPenaltyObjectiveType l1_epr_objective_type_;
+    SmartPtr<IpoptData> l1_ip_data_;
+public:
+    IpL1ExactPenaltyObjectiveType getL1EprObjectiveType() const {
+        return l1_epr_objective_type_;
+    }
 };
 }
 
