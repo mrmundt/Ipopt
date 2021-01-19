@@ -5,7 +5,9 @@
 #include "IpRegOptions.hpp"
 
 #include "IpL1ExactPenaltyRestoRegOp.hpp"
+#include "IpL1ExactPenaltyRestoData.hpp"
 #include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
+#include "IpL1ExactPenaltyRhoUpdater.hpp"
 #include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
 
 namespace Ipopt
@@ -15,8 +17,10 @@ namespace Ipopt
     )
 {
     roptions->SetRegisteringCategory("l1 Exact Penalty");
+    L1ExactPenaltyRestoData::RegisterOptions(roptions);
     L1ExactPenaltyRestoCQ::RegisterOptions(roptions);
-    IpL1ExactPenaltyRestoIpoptNLP::RegisterOptions(roptions);
+    L1ExactPenaltyRestoIpoptNLP::RegisterOptions(roptions);
+    L1ExactPenaltyRhoUpdater::RegisterOptions(roptions);
 
 }
 }

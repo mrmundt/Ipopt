@@ -23,6 +23,10 @@ public:
             const std::string& prefix
             ) override;
 
+    static void RegisterOptions(
+            SmartPtr<RegisteredOptions> roptions
+            );
+
     bool InitializeDataStructures() override;
     void AcceptTrialPoint() override;
 
@@ -46,8 +50,9 @@ public:
     void AcceptRhoTrial();
 
 private:
-    Number rho_;
-    Number rho_trial_;
+    Number rho_init_{1.};
+    Number rho_{1.};
+    Number rho_trial_{1.};
     bool rho_initialized_ = true;
     bool rho_has_changed_ = true;
 

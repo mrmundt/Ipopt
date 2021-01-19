@@ -3,8 +3,8 @@
 //
 
 #include "IpRestoL1ExactPenalty.hpp"
-#include "IpL1ExactPenaltyRestoData.hpp"
 #include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
+#include "IpDefaultIterateInitializer.hpp"
 
 namespace Ipopt
 {
@@ -21,7 +21,11 @@ bool RestoL1ExactPenalty::PerformRestoration()
     DBG_ASSERT(IpCq().curr_constraint_violation() > 0.);
     SmartPtr<IpoptAdditionalData> l1data = new L1ExactPenaltyRestoData();
     SmartPtr<IpoptData> l1_ip_data = new IpoptData(l1data, IpData().cpu_time_start());
-    SmartPtr<IpoptNLP> l1_ip_nlp = new L1ExactPenaltyRestoIpoptNLP(IpNLP(), IpData(), IpCq());
+    SmartPtr<IpoptNLP> l1_ip_nlp = new L1ExactPenaltyRestoIpoptNLP(
+            IpNLP(),
+            IpData(),
+            IpCq(),
+            l1_ip_data);
     // The actual calculated quantities for the l1 mode.
     SmartPtr<IpoptCalculatedQuantities> l1_ip_cq = new L1ExactPenaltyRestoCQ(l1_ip_nlp, l1_ip_data);
 

@@ -6,12 +6,56 @@
 #include "IpCompoundVector.hpp"
 #include "IpCompoundSymMatrix.hpp"
 #include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
+#include "IpFilterLSAcceptor.hpp"
+
 
 namespace Ipopt
 {
+
+L1ExactPenaltyRhoUpdater::L1ExactPenaltyRhoUpdater(
+        const SmartPtr<BacktrackingLSAcceptor> &resto_bls_acceptor) :
+        ip_bls_acceptor_(resto_bls_acceptor),
+        trial_rho_cache_(2)
+{
+    DBG_START_METH("L1ExactPenaltyRhoUpdater::L1ExactPenaltyRhoUpdater()", dbg_verbosity);
+}
+
+void L1ExactPenaltyRhoUpdater::RegisterOptions(
+        SmartPtr<RegisteredOptions> roptions) {
+    roptions->SetRegisteringCategory("l1 Exact Penalty");
+    roptions->AddStringOption4(
+            "l1_penalty_type",
+            "Type of update for the penalty parameter",
+            "linear_model",
+            "quadratic_model", "check the quadratic model",
+            "quadratic_model_no_sigma", "quadratic model without the barrier",
+            "linear_model", "use a linear model for predicted reduction",
+            "fixed", "fixed rho",
+            "Type of update for the penalty."
+    );
+    roptions->AddBoundedNumberOption(
+            "l1_epsilon",
+            "eps of (1 - eps)||c|| - (p+ + n+)",
+            0.0, true, 1.0, true, 0.1,
+            "Determines the aggressiveness of the denominator for rho");
+    roptions->AddLowerBoundedNumberOption(
+            "l1_penalty_feas_max",
+            "Max value of the rho update by factor.",
+            0.0, true, 1e+07,
+            "Set this value to the maximum allowed rho if the Factor"
+            "update strategy is used");
+}
+
+
 bool L1ExactPenaltyRhoUpdater::InitializeImpl(const OptionsList &options,
                                               const std::string &prefix) {
     SetMatrixSpaces();
+    options.GetStringValue("line_search_method", resto_lsacceptor_option_, "resto." + prefix);
+    Index l1rhotype;
+    options.GetEnumValue("l1_penalty_type", l1rhotype, prefix);
+    l1_epr_update_kind_ = RhoUpdateKind(l1rhotype);
+    options.GetNumericValue("l1_epsilon", l1_epr_epsi_, prefix);
+    options.GetNumericValue("l1_penalty_feas_max", l1_epr_max_rho, prefix);
 }
 
 
@@ -19,7 +63,9 @@ Number L1ExactPenaltyRhoUpdater::ComputeRhoTrial()
 {
 
     if (l1_epr_update_kind_ == CONST)
-    {return l1_epr_rho0_;} // if fixed
+    {
+        return L1EPRAddData().GetCurrentRho();
+    } // if fixed
 
     // rho
     Number rho_trial;
@@ -223,10 +269,12 @@ void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     if (old_rho < trial_rho)
     {
         new_rho = trial_rho + 1.;
+        IpData().Append_info_string(" rhoT");
     }
     else if (!l1_epr_suff_feasib_update_ && old_rho < l1_epr_max_rho)
     {
         new_rho = l1_epr_max_rho < old_rho * 2. ? l1_epr_max_rho : old_rho * 2.;
+        IpData().Append_info_string(" rhoF");
     }
     else
     {
@@ -237,18 +285,25 @@ void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
 
     }
 
-    void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
-    {
+void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
+{
     L1EPRAddData().AcceptRhoTrial();
-    // reset filter!;
+    // Make this optional.
+    if( resto_lsacceptor_option_ == "filter" ){
+        auto ip_flsa_ = dynamic_cast<FilterLSAcceptor*>(GetRawPtr(ip_bls_acceptor_));
+        ip_flsa_->Reset();
     }
-
+// reset filter!;
+}
 
 L1ExactPenaltyRestoData &L1ExactPenaltyRhoUpdater::L1EPRAddData()
 {
     auto retval = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData());
     return *retval;
 }
+
+    L1ExactPenaltyRhoUpdater::~L1ExactPenaltyRhoUpdater()
+    { }
 
 
 }

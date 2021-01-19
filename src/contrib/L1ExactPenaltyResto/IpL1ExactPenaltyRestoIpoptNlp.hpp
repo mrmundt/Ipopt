@@ -73,7 +73,7 @@ public:
 
 
 private:
-    IpL1ExactPenaltyObjectiveType l1_epr_objective_type_;
+    IpL1ExactPenaltyObjectiveType l1_epr_objective_type_{CONSTRAINT};
     SmartPtr<IpoptData> l1_ip_data_;
 public:
     IpL1ExactPenaltyObjectiveType getL1EprObjectiveType() const {

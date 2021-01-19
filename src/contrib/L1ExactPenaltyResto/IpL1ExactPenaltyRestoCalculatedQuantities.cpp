@@ -69,17 +69,7 @@ void L1ExactPenaltyRestoCQ::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions
         )
 {
-    roptions->SetRegisteringCategory("Unregistered");
-    roptions->AddStringOption4(
-            "l1exactpenalty_rho_type",
-            "Type of update for the penalty parameter",
-            "linear_model",
-            "quadratic_model", "check the quadratic model",
-            "quadratic_model_no_sigma", "quadratic model without the barrier",
-            "linear_model", "use a linear model for predicted reduction",
-            "fixed", "fixed rho",
-            "Type of update for the penalty."
-            );
+
 }
 
 bool L1ExactPenaltyRestoCQ::Initialize1(const Journalist &jnlst,
