@@ -33,6 +33,7 @@ void L1ExactPenaltyRestoFilterConvCheck::RegisterOptions(
 bool L1ExactPenaltyRestoFilterConvCheck::InitializeImpl(
         const OptionsList &options, const std::string &prefix)
 {
+    options.GetIntegerValue("max_iter", maximum_iters_l1_, prefix);
     return OptimalityErrorConvergenceCheck::InitializeImpl(options, prefix);
 }
 
@@ -50,7 +51,7 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
     DBG_ASSERT(dynamic_cast<const CompoundVector*>(GetRawPtr(x)));
     SmartPtr<IteratesVector> trial = orig_ip_data->curr()->MakeNewContainer();
     trial->Set_x(*cx->GetComp(0));
-    trial->Set_s(IpData().curr()->s());
+    trial->Set_s(*IpData().curr()->s());
     orig_ip_data->set_trial(trial);
 
     if(call_intermediate_callback) {
@@ -75,7 +76,7 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
         Number regu_x = IpData().info_regu_x();
         Number unscaled_f = orig_ip_cq->unscaled_trial_f();
         Index ls_count = IpData().info_ls_count();
-        bool request_stop = !IpNLP().IntermediateCallBack(mode, iter, unscaled_f, inf_pr, inf_du, du, dnrm, regu_x,
+        bool request_stop = !IpNLP().IntermediateCallBack(mode, iter, unscaled_f, inf_pr, inf_du, mu, dnrm, regu_x,
                                                           alpha_dual, alpha_primal, ls_count, &IpData(), &IpCq());
 
         if( request_stop )
@@ -84,16 +85,16 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
         }
     }
 
-    if (IpData().iter_count() >= maximum_iters_)
+    if (IpData().iter_count() >= maximum_iters_l1_)
     {
         return ConvergenceCheck::MAXITER_EXCEEDED;
     }
 
-    if( succesive_resto_iter_ > maximum_resto_iters_)
-    {
-        Jnlst().Printf(J_WARNING, J_MAIN,
-                       "Max resto iterations is skipped.")
-    }
+    //if( succesive_resto_iter_ > maximum_resto_iters_)
+    //{
+    //    Jnlst().Printf(J_WARNING, J_MAIN,
+    //                   "Max resto iterations is skipped.");
+    //}
     succesive_resto_iter_++;
 
     // We do not check the original filter.
@@ -114,11 +115,11 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
     Jnlst().Printf(J_DETAILED, J_MAIN,
                    "orig_curr_inf_pr = %8.2e, orig_trial_inf_pr = %8.2e\n", orig_curr_inf_pr, orig_trial_inf_pr);
 
-    Number orig_inf_pr_max = Max(kappa_resto_ * orig_curr_inf_pr, Min(orig_ip_data->tol(), orig_constr_viol_tol_));
-    if( kappa_resto_ == 0. )
-    {
-        orig_inf_pr_max = 0.;
-    }
+    //Number orig_inf_pr_max = Max(kappa_resto_ * orig_curr_inf_pr, Min(orig_ip_data->tol(), orig_constr_viol_tol_));
+    //if( kappa_resto_ == 0. )
+    //{
+    //    orig_inf_pr_max = 0.;
+    //}
 
     if( first_resto_iter_ )
     {

@@ -16,7 +16,7 @@ class L1ExactPenaltyRestoFilterConvCheck: public OptimalityErrorConvergenceCheck
 public:
     L1ExactPenaltyRestoFilterConvCheck();
 
-    ~L1ExactPenaltyRestoFilterConvCheck();
+    ~L1ExactPenaltyRestoFilterConvCheck() override;
 
     bool InitializeImpl(
             const OptionsList& options,
@@ -50,11 +50,11 @@ private:
             Number orit_trial_theta
             ) = 0;
 
-    Number kappa_resto_;
+    //Number kappa_resto_;
 
-    Index maximum_iters_;
+    Index maximum_iters_l1_;
 
-    Index maximum_resto_iters_;
+    //Index maximum_resto_iters_;
 
     Number orig_constr_viol_tol_;
 

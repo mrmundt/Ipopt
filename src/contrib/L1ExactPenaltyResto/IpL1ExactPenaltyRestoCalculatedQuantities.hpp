@@ -33,23 +33,21 @@ public:
             );
 
     /** Destructor */
-    virtual ~L1ExactPenaltyRestoCQ();
+    ~L1ExactPenaltyRestoCQ() override;
     //@}
 
     static void RegisterOptions(
             SmartPtr<RegisteredOptions> roptions
     );
 
-    bool Initialize1(
-    const Journalist& jnlst,
-    const OptionsList& options,
-    const std::string& prefix
-    );
-
+    bool Initialize(
+            const Journalist&  jnlst,
+            const OptionsList& options,
+            const std::string& prefix
+    ) override;
 
     Number curr_f() override;
     Number trial_f() override;
-
 
     SmartPtr<const Vector> curr_grad_f() override;
     SmartPtr<const Vector> trial_grad_f() override;
@@ -84,13 +82,7 @@ public:
     //        ENormType NormType
     //);
 
-
-
     // curr_compl_x_U stays out
-
-
-    SmartPtr<const Vector> curr_sigma_x() override;
-    SmartPtr<const Vector> curr_sigma_s() override;
 
 
 private:
@@ -103,11 +95,9 @@ private:
 
     void operator=(const L1ExactPenaltyRestoCQ&);
 
-
-
     SmartPtr<IpoptData> ip_data_l1_;
     SmartPtr<IpoptNLP> ip_nlp_l1_;
-    SmartPtr<L1ExactPenaltyRestoCQ> l1epr_cq_;
+    //SmartPtr<L1ExactPenaltyRestoCQ> l1epr_cq_;
 
     L1ExactPenaltyRestoData& L1EPRestoData()
     {
@@ -124,8 +114,8 @@ private:
     }
     SmartPtr<Vector> tmp_x_l1_;
     SmartPtr<Vector> tmp_s_l1_;
-    SmartPtr<Vector> tmp_c_l1_;
-    SmartPtr<Vector> tmp_d_l1_;
+    //SmartPtr<Vector> tmp_c_l1_;
+    //SmartPtr<Vector> tmp_d_l1_;
     SmartPtr<Vector> tmp_x_L_l1_;
     SmartPtr<Vector> tmp_x_U_l1_;
     SmartPtr<Vector> tmp_s_L_l1_;
@@ -134,8 +124,8 @@ private:
     /** Accessor methods for the temporary vectors */
     Vector& Tmp_x_l1();
     Vector& Tmp_s_l1();
-    Vector& Tmp_c_l1();
-    Vector& Tmp_d_l1();
+    //Vector& Tmp_c_l1();
+    //Vector& Tmp_d_l1();
     Vector& Tmp_x_L_l1();
     Vector& Tmp_x_U_l1();
     Vector& Tmp_s_L_l1();
@@ -155,11 +145,6 @@ private:
             SmartPtr<const Vector>& dampind_x_U,
             SmartPtr<const Vector>& dampind_s_L,
             SmartPtr<const Vector>& dampind_s_U
-    );
-
-    SmartPtr<Vector> CalcComplL1(
-            const Vector& slack,
-            const Vector& mult
     );
 
     CachedResults<Number> curr_f_cache_l1_;
@@ -188,8 +173,10 @@ private:
     SmartPtr<Vector> dampind_s_U_l1_;
 
     Number kappa_d_l1_{1.};
+    bool warm_start_same_structure_l1_{false};
 
     CachedResults<SmartPtr<const SymMatrix>> curr_exact_hessian_cache_l1_;
+
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_x_cache_l1_;
     CachedResults<SmartPtr<const Vector> > trial_grad_lag_x_cache_l1_;
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_s_cache_l1_;
@@ -197,31 +184,6 @@ private:
 
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_x_cache_l1_;
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_s_cache_l1_;
-
-    CachedResults<const Vector> curr_compl_x_L_cache_l1_;
-    CachedResults<const Vector> trial_compl_x_L_cache_l1_;
-
-    CachedResults<const Vector> curr_compl_x_U_cache_l1_;
-    CachedResults<const Vector> trial_compl_x_U_cache_l1_;
-
-    CachedResults<const Vector> curr_compl_s_L_cache_l1_;
-    CachedResults<const Vector> curr_compl_s_U_cache_l1_;
-
-    CachedResults<const Vector> trial_compl_s_L_cache_l1_;
-    CachedResults<const Vector> trial_compl_s_U_cache_l1_;
-
-    CachedResults<const Vector> curr_relaxed_compl_x_L_cached_l1_;
-    CachedResults<const Vector> curr_relaxed_compl_x_U_cached_l1_;
-
-    CachedResults<const Vector> curr_relaxed_compl_s_L_cached_l1_;
-    CachedResults<const Vector> curr_relaxed_compl_s_U_cached_l1_;
-
-    CachedResults<const Vector> curr_complementarity_cache_l1_;
-    CachedResults<const Vector> trial_complementarity_cache_l1_;
-
-    CachedResults<const Vector> curr_sigma_x_cache_l1_;
-    CachedResults<const Vector> curr_sigma_s_cache_l1_;
-
 
 };
 }

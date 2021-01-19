@@ -35,55 +35,69 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         curr_grad_barrier_obj_s_cache_l1_(1),
         grad_kappa_times_damping_x_cache_l1_(1),
         grad_kappa_times_damping_s_cache_l1_(1),
-        curr_compl_x_L_cache_l1_(1),
-        curr_compl_x_U_cache_l1_(1),
-        curr_compl_s_L_cache_l1_(1),
-        curr_compl_s_U_cache_l1_(1),
-        trial_compl_x_L_cache_l1_(1),
-        trial_compl_x_U_cache_l1_(1),
-        trial_compl_s_L_cache_l1_(1),
-        trial_compl_s_U_cache_l1_(1),
-        curr_relaxed_compl_x_L_cached_l1_(1),
-        curr_relaxed_compl_x_U_cached_l1_(1),
-        curr_relaxed_compl_s_L_cached_l1_(1),
-        curr_relaxed_compl_s_U_cached_l1_(1),
-        curr_complementarity_cache_l1_(6),
-        trial_complementarity_cache_l1_(6),
-        curr_sigma_x_cache_l1_(1),
-        curr_sigma_s_cache_l1_(1),
         dampind_x_L_l1_(NULL),
         dampind_x_U_l1_(NULL),
         dampind_s_L_l1_(NULL),
         dampind_s_U_l1_(NULL),
-
+        curr_exact_hessian_cache_l1_(1)   ,
+        curr_grad_lag_x_cache_l1_(1),
+        trial_grad_lag_x_cache_l1_(1),
+        curr_grad_lag_s_cache_l1_(1),
+        trial_grad_lag_s_cache_l1_(1),
+        curr_grad_lag_with_damping_x_cache_l1_(1),
+        curr_grad_lag_with_damping_s_cache_l1_(1)
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ",
                    dbg_verbosity);
     DBG_ASSERT(IsValid(ip_nlp_) && IsValid(ip_data_));
-
 }
 L1ExactPenaltyRestoCQ::~L1ExactPenaltyRestoCQ() noexcept
-{ }
+= default;
 
-void L1ExactPenaltyRestoCQ::RegisterOptions(
-        SmartPtr<RegisteredOptions> roptions
-        )
+bool L1ExactPenaltyRestoCQ::Initialize(
+        const Journalist&  jnlst,
+        const OptionsList& options,
+        const std::string& prefix
+)
 {
+    Index enum_int;
 
-}
+    //options.GetNumericValue("s_max", s_max_, prefix);
+    options.GetNumericValue("kappa_d", kappa_d_l1_, prefix);
+    //options.GetNumericValue("slack_move", slack_move_, prefix);
+    options.GetEnumValue("constraint_violation_norm_type", enum_int, prefix);
+    //constr_viol_normtype_ = ENormType(enum_int);
+    // The following option is registered by OrigIpoptNLP
+    options.GetBoolValue("warm_start_same_structure", warm_start_same_structure_l1_, prefix);
+    //options.GetNumericValue("mu_target", mu_target_, prefix);
 
-bool L1ExactPenaltyRestoCQ::Initialize1(const Journalist &jnlst,
-                                       const OptionsList &options,
-                                       const std::string &prefix)
-{
-    Index rho_int;
-    //options.GetEnumValue("l1exactpenalty_rho_type", rho_int, prefix);
-//    l1exactpenalty_rho_type_ = RhoUpdateKind(rho_int);
-    bool retval = false;
+    if( !warm_start_same_structure_l1_ )
+    {
+        dampind_x_L_l1_ = NULL;
+        dampind_x_U_l1_ = NULL;
+        dampind_s_L_l1_ = NULL;
+        dampind_s_U_l1_ = NULL;
 
+        tmp_x_l1_ = NULL;
+        tmp_s_l1_ = NULL;
+        //tmp_c_l1_ = NULL;
+        //tmp_d_l1_ = NULL;
+        tmp_x_L_l1_ = NULL;
+        tmp_x_U_l1_ = NULL;
+        tmp_s_L_l1_ = NULL;
+        tmp_s_U_l1_ = NULL;
+    }
+
+
+    //initialize_called_ = true;
+
+    bool retval;
+    //if( IsValid(add_cq_) )
+    //{
+    //    retval = add_cq_->Initialize(jnlst, options, prefix);
+    //}
     retval = IpoptCalculatedQuantities::Initialize(jnlst, options, prefix);
     return retval;
-
 }
 
 Number L1ExactPenaltyRestoCQ::curr_f()
@@ -411,7 +425,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()",
                    dbg_verbosity);
-    DBG_ASSERT(initialize_called_);
+    //DBG_ASSERT(initialize_called_);
     SmartPtr<const Vector> result;
 
     SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
@@ -475,7 +489,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()",
                    dbg_verbosity);
-    DBG_ASSERT(initialize_called_);
+    //DBG_ASSERT(initialize_called_);
     SmartPtr<const Vector> result;
     SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
 
@@ -514,7 +528,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_s()
 {
     DBG_START_METH("L1ExactPenaltyRestoCQ::grad_kappa_times_damping_s()",
                    dbg_verbosity);
-    DBG_ASSERT(initialize_called_);
+    //DBG_ASSERT(initialize_called_);
     SmartPtr<const Vector> result;
     SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
 
@@ -989,7 +1003,6 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
 }
 
 
-
 Vector& L1ExactPenaltyRestoCQ::Tmp_x_l1()
 {
     if( !IsValid(tmp_x_l1_) )
@@ -1007,7 +1020,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_s_l1()
     }
     return *tmp_s_l1_;
 }
-
+/*
 Vector& L1ExactPenaltyRestoCQ::Tmp_c_l1()
 {
     if( !IsValid(tmp_c_l1_) )
@@ -1025,7 +1038,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_d_l1()
     }
     return *tmp_d_l1_;
 }
-
+*/
 Vector& L1ExactPenaltyRestoCQ::Tmp_x_L_l1()
 {
     if( !IsValid(tmp_x_L_l1_) )
