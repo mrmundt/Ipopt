@@ -7,6 +7,7 @@
 #include "IpL1ExactPenaltyRestoIpoptNlp.hpp"
 #include "IpDebug.hpp"
 
+
 #include <cmath>
 
 namespace Ipopt
@@ -370,7 +371,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
     return true;
 }
 
-bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_unmodified,
+bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quality,
                                                   bool pretend_singular,
                                                   const SymMatrix &W,
                                                   const Matrix &J_c,
@@ -406,8 +407,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_unmodified,
     DBG_START_METH("PDFullSpaceSolver::SolveOnce", dbg_verbosity);
     SmartPtr<Vector> tmp;
     Number s_fact = 1.;
-    Number rho = static_cast<L1ExactPenaltyRestoData*>(&(IpData().AdditionalData()))->CurrentRho();
-    bool rho_inv_obj = static_cast<IpL1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1exactpenalty_inv_objective_type();
+    Number rho = static_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData())->GetCurrentRho();
+    bool rho_inv_obj = static_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
 
     IpData().TimingStats().PDSystemSolverSolveOnce().Start();
 
@@ -422,15 +423,17 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_unmodified,
     if (rho_inv_obj)
     {
         tmp = rhs.z_L()->MakeNewCopy();
-        CompoundVector* ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
-        SmartPtr<Vector> tmp_x = ctmp->GetCompNonConst(0);
+        CompoundVector* ctmp;
+        SmartPtr<Vector> tmp_x;
+        ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        tmp_x = ctmp->GetCompNonConst(0);
         tmp_x->Scal(1/rho);
-        Px_L.AddMSinvZ(1.0, slack_x_L, tmp, *augRhs_x);
+        Px_L.AddMSinvZ(1.0, slack_x_L, *tmp, *augRhs_x);
         tmp = rhs.z_U()->MakeNewCopy();
-        CompoundVector* ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
-        SmartPtr<Vector> tmp_x = ctmp->GetCompNonConst(0);
+        ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        tmp_x = ctmp->GetCompNonConst(0);
         tmp_x->Scal(1/rho);
-        Px_U.AddMSinvZ(-1.0, slack_x_U, tmp, *augRhs_x);
+        Px_U.AddMSinvZ(-1.0, slack_x_U, *tmp, *augRhs_x);
     } else{
         Px_L.AddMSinvZ(1.0, slack_x_L, *rhs.z_L(), *augRhs_x);
         Px_U.AddMSinvZ(-1.0, slack_x_U, *rhs.z_U(), *augRhs_x);
@@ -725,8 +728,8 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
 
     SmartPtr<Vector> tmp;
     Number s_fact = 1.;
-    Number rho = static_cast<L1ExactPenaltyRestoData*>(&(IpData().AdditionalData()))->CurrentRho();
-    bool rho_inv_obj = static_cast<IpL1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1exactpenalty_inv_objective_type();
+    Number rho = static_cast<L1ExactPenaltyRestoData*>(&(IpData().AdditionalData()))->GetCurrentRho();
+    bool rho_inv_obj = static_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
 
 
     // x
@@ -736,16 +739,16 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
     tmp = resid.x_NonConst()->MakeNew();
     //Px_L.MultVector(-1., *res.z_L(), 1., *resid.x_NonConst());
     //Px_U.MultVector(1., *res.z_U(), 1., *resid.x_NonConst());
-    Px_L.MultVector(-1., *res.z_L(), 0., tmp);
-    Px_U.MultVector(1., *res.z_U(), 1., tmp);
+    Px_L.MultVector(-1., *res.z_L(), 0., *tmp);
+    Px_U.MultVector(1., *res.z_U(), 1., *tmp);
     if (rho_inv_obj)
     {
-        CompoundVector ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
-        SmartPtr<Vector> tmp_x = ctmp.GetCompNonConst(0);
+        CompoundVector* ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        SmartPtr<Vector> tmp_x = ctmp->GetCompNonConst(0);
         tmp_x->Scal(1/rho);
     }
 
-    resid.x_NonConst()->Axpy(1., tmp);
+    resid.x_NonConst()->Axpy(1., *tmp);
     resid.x_NonConst()->AddTwoVectors(delta_x, *res.x(), -1., *rhs.x(), 1.);
 
     // s
@@ -835,11 +838,11 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
 }
 
 
-void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResidualRatio(
+Number L1ExactPenaltyRestoPDFSpaceSolver::ComputeResidualRatio(
         const IteratesVector &rhs, const IteratesVector &res,
         const IteratesVector &resid)
 {
-    DBG_START_METH("PDFullSpaceSolver::ComputeResidualRatio", dbg_verbosity);
+    DBG_START_METH("L1ExactPenaltyRestoPDFSpaceSolver::ComputeResidualRatio", dbg_verbosity);
 
     Number nrm_rhs = rhs.Amax();
     Number nrm_res = res.Amax();

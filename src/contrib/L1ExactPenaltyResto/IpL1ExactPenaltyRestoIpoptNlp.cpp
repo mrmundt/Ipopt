@@ -203,4 +203,23 @@ Number L1ExactPenaltyRestoIpoptNLP::Rho() const
     return rho0;
 }
 
+    Number L1ExactPenaltyRestoIpoptNLP::f(const Vector &x) {
+        return RestoIpoptNLP::f(x);
+    }
+
+    SmartPtr<const Vector>
+    L1ExactPenaltyRestoIpoptNLP::grad_f(const Vector &x) {
+        return RestoIpoptNLP::grad_f(x);
+    }
+
+    SmartPtr<const Vector> L1ExactPenaltyRestoIpoptNLP::c(const Vector &x) {
+        return RestoIpoptNLP::c(x);
+    }
+
+    SmartPtr<const SymMatrix>
+    L1ExactPenaltyRestoIpoptNLP::h(const Vector &x, Number obj_factor,
+                                   const Vector &yc, const Vector &yd) {
+        return RestoIpoptNLP::h(x, obj_factor, yc, yd);
+    }
+
 }
