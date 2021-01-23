@@ -21,7 +21,7 @@
 
 namespace Ipopt
 {
-DECLARE_STD_EXCEPTION(STEP_COMPUTATION_FAILED);
+DECLARE_STD_EXCEPTION(L1_STEP_COMPUTATION_FAILED);
 
 class L1IpoptAlg : public AlgorithmStrategyObject
 {

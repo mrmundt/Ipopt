@@ -190,7 +190,7 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
                 {
                     Jnlst().Printf(J_ERROR, J_MAIN,
                                    "ERROR: Problem in step computation, but emergency mode cannot be activated.\n");
-                    THROW_EXCEPTION(STEP_COMPUTATION_FAILED, "Step computation failed.");
+                    THROW_EXCEPTION(L1_STEP_COMPUTATION_FAILED, "Step computation failed.");
                 }
             }
             ComputeRhoTrial();
@@ -296,7 +296,7 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
         IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
         retval = USER_REQUESTED_STOP;
     }
-    catch (STEP_COMPUTATION_FAILED& exc)
+    catch (L1_STEP_COMPUTATION_FAILED& exc)
     {
         exc.ReportException(Jnlst(), J_MOREDETAILED);
         IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
