@@ -54,6 +54,7 @@
 #include "IpL1ExactPenaltyRestoPdfSpaceSolver.hpp"
 #include "IpL1IpoptAlg.hpp"
 #include "IpRestoL1ExactPenalty.hpp"
+#include "IpL1ExactPenaltyRhoUpdater.hpp"
 
 #ifdef IPOPT_HAS_HSL
 #include "CoinHslConfig.h"
@@ -1095,6 +1096,14 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
 
     std::string lsmethod;
     options.GetStringValue("line_search_method", lsmethod, prefix);
+    SmartPtr<SearchDirectionCalculator> resto_SearchDirCalc;
+    SmartPtr<LineSearch> resto_LineSearch;
+    SmartPtr<MuUpdate> resto_MuUpdate;
+    SmartPtr<IterateInitializer> resto_IterInitializer;
+    SmartPtr<IterationOutput> resto_IterOutput;
+    SmartPtr<HessianUpdater> resto_HessUpdater;
+    SmartPtr<EqMultiplierCalculator> resto_EqMultCalculator;
+
     if(lsmethod == "filter" || lsmethod == "penalty")
     {
         SmartPtr<AugSystemSolver> resto_AugSolver = new AugRestoSystemSolver(*GetAugSystemSolver(jnlst, options, prefix));
@@ -1144,12 +1153,10 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         {
             resto_LSacceptor == new PenaltyLSAcceptor(GetRawPtr(resto_PDSolver));
         }
-        SmartPtr<LineSearch> resto_LineSearch = new BacktrackingLineSearch(resto_LSacceptor,
-                                                                           GetRawPtr(resto_resto),
-                                                                           GetRawPtr(resto_convCheck));
+        resto_LineSearch = new BacktrackingLineSearch(resto_LSacceptor, GetRawPtr(resto_resto), GetRawPtr(resto_convCheck));
 
         // Create the mu update that will be used by the restoration phase algorithm
-        SmartPtr<MuUpdate> resto_MuUpdate;
+
         std::string resto_smuupdate;
         if( !options.GetStringValue("mu_strategy", resto_smuupdate, "resto." + prefix))
         {
@@ -1207,16 +1214,16 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         }
 
         // Initialization of the iterates for the restoration phase.
-        SmartPtr<EqMultiplierCalculator> resto_EqMultCalculator = new LeastSquareMultipliers(*resto_AugSolver);
-        SmartPtr<IterateInitializer> resto_IterInitializer = new RestoIterateInitializer(resto_EqMultCalculator);
+        resto_EqMultCalculator = new LeastSquareMultipliers(*resto_AugSolver);
+        resto_IterInitializer = new RestoIterateInitializer(resto_EqMultCalculator);
 
         // Create the object for the iteration output during restoration
         SmartPtr<OrigIterationOutput> resto_OrigIterOutput = NULL;
         // new OrigIterationOutput();
-        SmartPtr<IterationOutput> resto_IterOutput = new RestoIterationOutput(resto_OrigIterOutput);
+        resto_IterOutput = new RestoIterationOutput(resto_OrigIterOutput);
 
         // Get the Hessian Updater for the restoration phase
-        SmartPtr<HessianUpdater> resto_HessUpdater;
+
         switch (hessian_approximation)
         {
             case EXACT:
@@ -1238,34 +1245,12 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
             resto_SearchDirCalc = new PDSearchDirCalculator(GetRawPtr(resto_PDSolver));
         }
 
-        if(resto_method == "l1")
-        {
-            SmartPtr<L1IpoptAlg> resto_alg = new L1IpoptAlg(resto_SearchDirCalc,
-                                                            GetRawPtr(resto_LineSearch),
-                                                            GetRawPtr(resto_MuUpdate),
-                                                            GetRawPtr(resto_convCheck),
-                                                            resto_IterInitializer,
-                                                            resto_IterOutput,
-                                                            resto_HessUpdater,
-                                                            resto_EqMultCalculator);
-            resto_phase = new L1ExactPenaltyRestorationPhase(*resto_alg, EqMultCalculator_);
-        }
 
-        SmartPtr<IpoptAlgorithm> resto_alg = new IpoptAlgorithm(resto_SearchDirCalc,
-                                                                GetRawPtr(resto_LineSearch),
-                                                                GetRawPtr(resto_MuUpdate),
-                                                                GetRawPtr(resto_convCheck),
-                                                                resto_IterInitializer,
-                                                                resto_IterOutput,
-                                                                resto_HessUpdater,
-                                                                resto_EqMultCalculator);
-        // Set the restoration phase
-        resto_phase = new MinC_1NrmRestorationPhase(*resto_alg, EqMultCalculator_);
     }
 
     // Create the line search to be used by the main algorithm
     SmartPtr<BacktrackingLSAcceptor> LSacceptor;
-    if( lsmethod == "filter")
+    if( lsmethod == "filter" || resto_method == "l1")
     {
         LSacceptor = new FilterLSAcceptor(GetRawPtr(GetPDSystemSolver(jnlst, options, prefix)));
     }
@@ -1277,6 +1262,43 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
     {
         LSacceptor = new PenaltyLSAcceptor(GetRawPtr(GetPDSystemSolver(jnlst, options, prefix)));
     }
+
+    if(lsmethod == "filter" || lsmethod == "penalty") {
+        if (resto_method == "l1"  && !(lsmethod == "cg-penalty")) {
+            SmartPtr<L1ExactPenaltyRhoUpdater> l1_updater = new L1ExactPenaltyRhoUpdater(LSacceptor);
+            SmartPtr<L1IpoptAlg> resto_alg = new L1IpoptAlg(resto_SearchDirCalc,
+                                                            GetRawPtr(
+                                                                    resto_LineSearch),
+                                                            GetRawPtr(
+                                                                    resto_MuUpdate),
+                                                            GetRawPtr(
+                                                                    resto_convCheck),
+                                                            resto_IterInitializer,
+                                                            resto_IterOutput,
+                                                            resto_HessUpdater,
+                                                            l1_updater,
+                                                            resto_EqMultCalculator);
+            resto_phase = new L1ExactPenaltyRestorationPhase(*resto_alg,
+                                                             EqMultCalculator_);
+        } else
+        {
+
+            SmartPtr<IpoptAlgorithm> resto_alg = new IpoptAlgorithm(
+                    resto_SearchDirCalc,
+                    GetRawPtr(resto_LineSearch),
+                    GetRawPtr(resto_MuUpdate),
+                    GetRawPtr(resto_convCheck),
+                    resto_IterInitializer,
+                    resto_IterOutput,
+                    resto_HessUpdater,
+                    resto_EqMultCalculator);
+            // Set the restoration phase
+            resto_phase = new MinC_1NrmRestorationPhase(*resto_alg,
+                                                        EqMultCalculator_);
+        }
+    }
+
+
     SmartPtr<LineSearch> LineSearch = new BacktrackingLineSearch(LSacceptor, GetRawPtr(resto_phase), ConvCheck_);
 
     if(IsValid(resto_convCheck))
