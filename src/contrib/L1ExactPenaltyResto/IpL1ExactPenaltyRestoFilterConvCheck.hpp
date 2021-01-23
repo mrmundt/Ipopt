@@ -29,7 +29,7 @@ public:
 
     virtual void SetOirgLSAcceptor(
             const BacktrackingLSAcceptor& orig_ls_acceptor
-            ) = 0;
+            ) { }
 
     static void RegisterOptions(
             SmartPtr<RegisteredOptions> roptions
@@ -45,10 +45,10 @@ private:
             const L1ExactPenaltyRestoFilterConvCheck&
             );
 
-    virtual ConvergenceStatus TestOrigProgress(
-            Number orig_trial_barr,
-            Number orit_trial_theta
-            ) = 0;
+    //virtual ConvergenceStatus TestOrigProgress(
+    //        Number orig_trial_barr,
+    //        Number orit_trial_theta
+    //        ) = 0;
 
     //Number kappa_resto_;
 

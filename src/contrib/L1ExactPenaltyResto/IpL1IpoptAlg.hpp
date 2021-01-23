@@ -23,10 +23,10 @@ namespace Ipopt
 {
 DECLARE_STD_EXCEPTION(STEP_COMPUTATION_FAILED);
 
-class IpL1IpoptAlg : public AlgorithmStrategyObject
+class L1IpoptAlg : public AlgorithmStrategyObject
 {
 public:
-    IpL1IpoptAlg(
+    L1IpoptAlg(
             const SmartPtr<SearchDirectionCalculator>& search_dir_calculator,
             const SmartPtr<LineSearch>&                line_search,
             const SmartPtr<MuUpdate>&                  mu_update,
@@ -37,7 +37,7 @@ public:
             const SmartPtr<L1ExactPenaltyRhoUpdater>&  l1exactpenalty_rho_updater,
             const SmartPtr<EqMultiplierCalculator>&    eq_multiplier_calculator = NULL);
 
-    ~IpL1IpoptAlg() override;
+    ~L1IpoptAlg() override;
 
     bool InitializeImpl(
             const OptionsList& options,
@@ -57,10 +57,10 @@ public:
             );
 
 private:
-    IpL1IpoptAlg();
+    L1IpoptAlg();
 
-    IpL1IpoptAlg(
-            const IpL1IpoptAlg&
+    L1IpoptAlg(
+            const L1IpoptAlg&
             );
 
     SmartPtr<SearchDirectionCalculator> search_dir_calculator_;

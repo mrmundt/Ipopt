@@ -15,7 +15,7 @@ namespace Ipopt
 {
 
 
-IpL1IpoptAlg::IpL1IpoptAlg(
+L1IpoptAlg::L1IpoptAlg(
         const SmartPtr<SearchDirectionCalculator> &search_dir_calculator,
         const SmartPtr<LineSearch> &line_search,
         const SmartPtr<MuUpdate> &mu_update,
@@ -36,7 +36,7 @@ IpL1IpoptAlg::IpL1IpoptAlg(
         l1exactpenalty_rho_updater_(l1exactpenalty_rho_updater)
 
 {
-    DBG_START_METH("IpL1IpoptAlg::IpL1IpoptAlg", dbg_verbosity);
+    DBG_START_METH("L1IpoptAlg::L1IpoptAlg", dbg_verbosity);
     DBG_ASSERT(IsValid(search_dir_calculator_));
     DBG_ASSERT(IsValid(line_search_));
     DBG_ASSERT(IsValid(mu_update_));
@@ -46,16 +46,16 @@ IpL1IpoptAlg::IpL1IpoptAlg(
     DBG_ASSERT(IsValid(hessian_updater_));
 }
 
-void IpL1IpoptAlg::RegisterOptions(SmartPtr<RegisteredOptions> roptions)
+void L1IpoptAlg::RegisterOptions(SmartPtr<RegisteredOptions> roptions)
 {}
 
 static bool copyright_message_printed = true;
 
-bool IpL1IpoptAlg::InitializeImpl(const OptionsList &options,
-                                  const std::string &prefix)
+bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
+                                const std::string &prefix)
 {
 
-    DBG_START_METH("IpL1IpoptAlg::RegisterOptions", dbg_verbosity);
+    DBG_START_METH("L1IpoptAlg::RegisterOptions", dbg_verbosity);
     SmartPtr<const OptionsList> my_options;
     my_options = &options;
     copyright_message_printed = true;
@@ -133,9 +133,9 @@ bool IpL1IpoptAlg::InitializeImpl(const OptionsList &options,
     return  true;
 }
 
-SolverReturn IpL1IpoptAlg::Optimize(bool isResto)
+SolverReturn L1IpoptAlg::Optimize(bool isResto)
 {
-    DBG_START_METH("IpL1IpoptAlg::Optimize", dbg_verbosity);
+    DBG_START_METH("L1IpoptAlg::Optimize", dbg_verbosity);
 
     IpData().TimingStats().OverallAlgorithm().Start();
     IpData().ResetCpuStartTime();
@@ -340,43 +340,43 @@ SolverReturn IpL1IpoptAlg::Optimize(bool isResto)
 }
 
 
-void IpL1IpoptAlg::UpdateHessian()
+void L1IpoptAlg::UpdateHessian()
 {
     hessian_updater_->UpdateHessian();
 }
 
-bool IpL1IpoptAlg::UpdateBarrierParameter()
+bool L1IpoptAlg::UpdateBarrierParameter()
 {
     bool retval = mu_update_->UpdateBarrierParameter();
 
     return retval;
 }
 
-bool IpL1IpoptAlg::ComputeSearchDirection()
+bool L1IpoptAlg::ComputeSearchDirection()
 {
     bool retval = search_dir_calculator_->ComputeSearchDirection();
 
     return retval;
 }
 
-void IpL1IpoptAlg::ComputeAcceptableTrialPoint()
+void L1IpoptAlg::ComputeAcceptableTrialPoint()
 {
     line_search_->FindAcceptableTrialPoint();
 }
 
-void IpL1IpoptAlg::OutputIteration()
+void L1IpoptAlg::OutputIteration()
 {
     iter_ouput_->WriteOutput();
 }
 
-void IpL1IpoptAlg::InitializeIterates()
+void L1IpoptAlg::InitializeIterates()
 {
     bool retval = iterate_initializer_->SetInitialIterates();
     ASSERT_EXCEPTION(retval, FAILED_INITIALIZATION, "Error while obtaining initial iterates.");
 
 }
 
-void IpL1IpoptAlg::AcceptTrialPoint()
+void L1IpoptAlg::AcceptTrialPoint()
 {
     if(line_search_->CheckSkippedLineSearch())
     {
@@ -538,7 +538,7 @@ void IpL1IpoptAlg::AcceptTrialPoint()
 
 }
 
-void IpL1IpoptAlg::PrintProblemStatistics()
+void L1IpoptAlg::PrintProblemStatistics()
 {
     if(!Jnlst().ProduceOutput(J_SUMMARY, J_STATISTICS))
     {
@@ -583,9 +583,9 @@ void IpL1IpoptAlg::PrintProblemStatistics()
                    "        inequality constraints with only upper bounds: %8d\n\n", ns_only_upper);
 }
 
-void IpL1IpoptAlg::ComputeFeasibilityMultipliers()
+void L1IpoptAlg::ComputeFeasibilityMultipliers()
 {
-    DBG_START_METH("IpL1IpoptAlg::ComputeFeasibilityMultipliers",
+    DBG_START_METH("L1IpoptAlg::ComputeFeasibilityMultipliers",
                    dbg_verbosity);
     DBG_ASSERT(IpCq().IsSquareProblem());
     if(IsNull(eq_multiplier_calculator_))
@@ -629,14 +629,14 @@ void IpL1IpoptAlg::ComputeFeasibilityMultipliers()
     }
 }
 
-void IpL1IpoptAlg::calc_number_of_bounds(const Vector &x, const Vector &x_L,
-                                           const Vector &x_U,
-                                           const Matrix &Px_L,
-                                           const Matrix &Px_U, Index &n_tot,
-                                           Index &n_only_lower, Index &n_both,
-                                           Index &n_only_upper)
+void L1IpoptAlg::calc_number_of_bounds(const Vector &x, const Vector &x_L,
+                                       const Vector &x_U,
+                                       const Matrix &Px_L,
+                                       const Matrix &Px_U, Index &n_tot,
+                                       Index &n_only_lower, Index &n_both,
+                                       Index &n_only_upper)
 {
-    DBG_START_METH("IpL1IpoptAlg::calc_number_of_bounds",
+    DBG_START_METH("L1IpoptAlg::calc_number_of_bounds",
                    dbg_verbosity);
     n_tot = x.Dim();
     SmartPtr<Vector> tmpx = x.MakeNew();
@@ -673,12 +673,12 @@ void IpL1IpoptAlg::calc_number_of_bounds(const Vector &x, const Vector &x_L,
     n_only_lower = (Index) tmpx->Asum();
 }
 
-Number IpL1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
-                                              const Vector &trial_slack,
-                                              const Vector &trial_compl,
-                                              SmartPtr<const Vector> &new_trial_z)
+Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
+                                            const Vector &trial_slack,
+                                            const Vector &trial_compl,
+                                            SmartPtr<const Vector> &new_trial_z)
 {
-    DBG_START_METH("IpL1IpoptAlg::correct_bound_multiplier",
+    DBG_START_METH("L1IpoptAlg::correct_bound_multiplier",
                    dbg_verbosity);
 
     if(kappa_sigma_ < 1. || trial_z.Dim() == 0)
@@ -745,7 +745,7 @@ Number IpL1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
     return Max(max_correction_up, max_correction_low);
 }
 
-void IpL1IpoptAlg::print_copyright_message(
+void L1IpoptAlg::print_copyright_message(
         const Journalist& jnlst
 )
 {
@@ -758,12 +758,12 @@ void IpL1IpoptAlg::print_copyright_message(
     copyright_message_printed = true;
 }
 
-void IpL1IpoptAlg::ComputeRhoTrial()
+void L1IpoptAlg::ComputeRhoTrial()
 {
     l1exactpenalty_rho_updater_->UpdateRhoTrial();
 }
 
-void IpL1IpoptAlg::UpdateRhoAction()
+void L1IpoptAlg::UpdateRhoAction()
 {
     l1exactpenalty_rho_updater_->UpdateRhoAction();
 }

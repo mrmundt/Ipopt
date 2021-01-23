@@ -8,15 +8,15 @@
 
 namespace Ipopt
 {
-RestoL1ExactPenalty::RestoL1ExactPenalty(IpL1IpoptAlg &resto_alg,
-                                         const SmartPtr<EqMultiplierCalculator> &eq_mult_calculator) :
+L1ExactPenaltyRestorationPhase::L1ExactPenaltyRestorationPhase(L1IpoptAlg &resto_alg,
+                                                               const SmartPtr<EqMultiplierCalculator> &eq_mult_calculator) :
                                          resto_alg_(&resto_alg),
                                          eq_mult_calculator_(eq_mult_calculator)
 {}
 
-bool RestoL1ExactPenalty::PerformRestoration()
+bool L1ExactPenaltyRestorationPhase::PerformRestoration()
 {
-    DBG_START_METH("RestoL1ExactPenalty::PerformRestoration",
+    DBG_START_METH("L1ExactPenaltyRestorationPhase::PerformRestoration",
                    dbg_verbosity);
     DBG_ASSERT(IpCq().curr_constraint_violation() > 0.);
     SmartPtr<IpoptAdditionalData> l1data = new L1ExactPenaltyRestoData();
@@ -263,10 +263,10 @@ bool RestoL1ExactPenalty::PerformRestoration()
     return (retval == 0);
 }
 
-void RestoL1ExactPenalty::ComputeBoundMultiplierStep(Vector &delta_z,
-                                                     const Vector &curr_z,
-                                                     const Vector &curr_slack,
-                                                     const Vector &trial_slack)
+void L1ExactPenaltyRestorationPhase::ComputeBoundMultiplierStep(Vector &delta_z,
+                                                                const Vector &curr_z,
+                                                                const Vector &curr_slack,
+                                                                const Vector &trial_slack)
 {
     Number mu = IpData().curr_mu();
 

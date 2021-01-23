@@ -11,15 +11,15 @@
 #include "IpEqMultCalculator.hpp"
 
 namespace Ipopt {
-class RestoL1ExactPenalty:  public RestorationPhase
+class L1ExactPenaltyRestorationPhase: public RestorationPhase
 {
 public:
-    RestoL1ExactPenalty(
-            IpL1IpoptAlg&   resto_alg,
+    L1ExactPenaltyRestorationPhase(
+            L1IpoptAlg&   resto_alg,
             const SmartPtr<EqMultiplierCalculator>& eq_mult_calculator
             );
 
-    ~RestoL1ExactPenalty() override;
+    ~L1ExactPenaltyRestorationPhase() override;
 
     bool InitializeImpl(const OptionsList &options, const std::string &prefix) override;
 
@@ -29,13 +29,13 @@ protected:
     bool PerformRestoration() override;
 
 private:
-    RestoL1ExactPenalty();
+    L1ExactPenaltyRestorationPhase();
 
-    RestoL1ExactPenalty(const RestoL1ExactPenalty&);
+    L1ExactPenaltyRestorationPhase(const L1ExactPenaltyRestorationPhase&);
 
-    void operator=(const RestoL1ExactPenalty&);
+    void operator=(const L1ExactPenaltyRestorationPhase&);
 
-    SmartPtr<IpL1IpoptAlg> resto_alg_;
+    SmartPtr<L1IpoptAlg> resto_alg_;
     SmartPtr<EqMultiplierCalculator> eq_mult_calculator_;
     SmartPtr<OptionsList> resto_options_;
     Number constr_mult_reset_threshold_;
