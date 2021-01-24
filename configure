@@ -22110,7 +22110,7 @@ $as_echo "$ac_success" >&6; }
       *-linux*)
 
   ac_save_LIBS="$LIBS"
-  LIBS="-lmkl_core -lmkl_intel_lp64 -lmkl_sequential -lm $LIBS"
+  LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm $LIBS"
 
 
   dsyev_namemangling=unknown
@@ -22178,7 +22178,7 @@ $as_echo "$ac_success" >&6; }
   if test $ac_success = yes ; then
 
            coin_has_lapack=yes
-           lapack_lflags="-lmkl_core -lmkl_intel_lp64 -lmkl_sequential -lm"
+           lapack_lflags="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm"
 
   fi
 
@@ -22440,7 +22440,7 @@ $as_echo "$ac_success" >&6; }
       *-darwin*)
 
   ac_save_LIBS="$LIBS"
-  LIBS="-lmkl_core -lmkl_intel_lp64 -lmkl_sequential -lm $LIBS"
+  LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm $LIBS"
 
 
   dsyev_namemangling=unknown
@@ -22508,7 +22508,7 @@ $as_echo "$ac_success" >&6; }
   if test $ac_success = yes ; then
 
           coin_has_lapack=yes
-          lapack_lflags="-lmkl_core -lmkl_intel_lp64 -lmkl_sequential -lm"
+          lapack_lflags="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm"
 
   fi
 
@@ -25566,7 +25566,7 @@ fi
 # is made)
 
 
-IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
+IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../contrib/L1ExactPenaltyResto/lib_l1.la  ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
 
  if test $use_inexact = yes; then
   BUILD_INEXACT_TRUE=
@@ -26205,7 +26205,7 @@ $as_echo "$as_me: SIPOPTAMPLINTERFACELIB_CFLAGS: \"${SIPOPTAMPLINTERFACELIB_CFLA
 
 
 
-ac_config_files="$ac_config_files Makefile src/Common/Makefile src/LinAlg/Makefile src/LinAlg/TMatrices/Makefile src/Interfaces/Makefile src/Algorithm/Makefile src/Algorithm/LinearSolvers/Makefile src/Algorithm/Inexact/Makefile src/contrib/CGPenalty/Makefile src/contrib/LinearSolverLoader/Makefile src/Apps/Makefile src/Apps/AmplSolver/Makefile test/Makefile test/run_unitTests ipopt.pc doc/Doxyfile examples/Cpp_example/Makefile examples/recursive_nlp/Makefile examples/hs071_cpp/Makefile examples/hs071_c/Makefile examples/ScalableProblems/Makefile tutorial/CodingExercise/C/1-skeleton/Makefile tutorial/CodingExercise/C/2-mistake/Makefile tutorial/CodingExercise/C/3-solution/Makefile tutorial/CodingExercise/Cpp/1-skeleton/Makefile tutorial/CodingExercise/Cpp/2-mistake/Makefile tutorial/CodingExercise/Cpp/3-solution/Makefile tutorial/CodingExercise/Matlab/1-skeleton/startup.m tutorial/CodingExercise/Matlab/2-mistake/startup.m tutorial/CodingExercise/Matlab/3-solution/startup.m"
+ac_config_files="$ac_config_files Makefile src/Common/Makefile src/LinAlg/Makefile src/LinAlg/TMatrices/Makefile src/Interfaces/Makefile src/Algorithm/Makefile src/Algorithm/LinearSolvers/Makefile src/Algorithm/Inexact/Makefile src/contrib/CGPenalty/Makefile src/contrib/L1ExactPenaltyResto/Makefile src/contrib/LinearSolverLoader/Makefile src/Apps/Makefile src/Apps/AmplSolver/Makefile test/Makefile test/run_unitTests ipopt.pc doc/Doxyfile examples/Cpp_example/Makefile examples/recursive_nlp/Makefile examples/hs071_cpp/Makefile examples/hs071_c/Makefile examples/ScalableProblems/Makefile tutorial/CodingExercise/C/1-skeleton/Makefile tutorial/CodingExercise/C/2-mistake/Makefile tutorial/CodingExercise/C/3-solution/Makefile tutorial/CodingExercise/Cpp/1-skeleton/Makefile tutorial/CodingExercise/Cpp/2-mistake/Makefile tutorial/CodingExercise/Cpp/3-solution/Makefile tutorial/CodingExercise/Matlab/1-skeleton/startup.m tutorial/CodingExercise/Matlab/2-mistake/startup.m tutorial/CodingExercise/Matlab/3-solution/startup.m"
 
 
 if test -n "$F77" ; then
@@ -27616,6 +27616,7 @@ do
     "src/Algorithm/LinearSolvers/Makefile") CONFIG_FILES="$CONFIG_FILES src/Algorithm/LinearSolvers/Makefile" ;;
     "src/Algorithm/Inexact/Makefile") CONFIG_FILES="$CONFIG_FILES src/Algorithm/Inexact/Makefile" ;;
     "src/contrib/CGPenalty/Makefile") CONFIG_FILES="$CONFIG_FILES src/contrib/CGPenalty/Makefile" ;;
+    "src/contrib/L1ExactPenaltyResto/Makefile") CONFIG_FILES="$CONFIG_FILES src/contrib/L1ExactPenaltyResto/Makefile" ;;
     "src/contrib/LinearSolverLoader/Makefile") CONFIG_FILES="$CONFIG_FILES src/contrib/LinearSolverLoader/Makefile" ;;
     "src/Apps/Makefile") CONFIG_FILES="$CONFIG_FILES src/Apps/Makefile" ;;
     "src/Apps/AmplSolver/Makefile") CONFIG_FILES="$CONFIG_FILES src/Apps/AmplSolver/Makefile" ;;

@@ -4,7 +4,7 @@
 #
 # Authors:  Carl Laird, Andreas Waechter     IBM    2004-08-13
 
-SUBDIRS = src/Common src/LinAlg src/Algorithm src/contrib/CGPenalty
+SUBDIRS = src/Common src/LinAlg src/Algorithm src/contrib/CGPenalty src/contrib/L1ExactPenaltyResto
 
 if BUILD_LINEARSOLVERLOADER
   SUBDIRS += src/contrib/LinearSolverLoader
