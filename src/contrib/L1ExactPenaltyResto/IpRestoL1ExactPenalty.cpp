@@ -278,5 +278,7 @@ void L1ExactPenaltyRestorationPhase::ComputeBoundMultiplierStep(Vector &delta_z,
     delta_z.Axpy(-1., curr_z);
 }
 
+    L1ExactPenaltyRestorationPhase::~L1ExactPenaltyRestorationPhase() = default;
+
 
 }

@@ -768,6 +768,8 @@ void L1IpoptAlg::UpdateRhoAction()
     l1exactpenalty_rho_updater_->UpdateRhoAction();
 }
 
+    L1IpoptAlg::~L1IpoptAlg() = default;
+
 
 }
 

@@ -985,7 +985,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
 
    return LineSearch;
 }
-
+*/
 SmartPtr<MuUpdate> AlgorithmBuilder::BuildMuUpdate(
    const Journalist&     jnlst,
    const OptionsList&    options,
@@ -1075,7 +1075,7 @@ SmartPtr<MuUpdate> AlgorithmBuilder::BuildMuUpdate(
    }
    return MuUpdate;
 }
-*/
+
 SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         const Journalist& jnlst,
         const OptionsList& options,

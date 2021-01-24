@@ -35,10 +35,11 @@ public:
     /** Destructor */
     ~L1ExactPenaltyRestoCQ() override;
     //@}
-
+    /*
     static void RegisterOptions(
             SmartPtr<RegisteredOptions> roptions
     );
+     */
 
     bool Initialize(
             const Journalist&  jnlst,

@@ -13,7 +13,6 @@ namespace Ipopt
 
     void RegisterOptions_L1ExactPenaltyResto(
         const SmartPtr<RegisteredOptions>& roptions
-
     );
 }
 
