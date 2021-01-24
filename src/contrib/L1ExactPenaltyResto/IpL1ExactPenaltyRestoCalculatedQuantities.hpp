@@ -35,10 +35,11 @@ public:
     /** Destructor */
     ~L1ExactPenaltyRestoCQ() override;
     //@}
-
+    /*
     static void RegisterOptions(
             SmartPtr<RegisteredOptions> roptions
     );
+     */
 
     bool Initialize(
             const Journalist&  jnlst,
@@ -106,7 +107,7 @@ private:
         return *l1epresto_data;
     }
 
-    SmartPtr<L1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
+    SmartPtr<const L1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
     {
         SmartPtr<const L1ExactPenaltyRestoIpoptNLP> l1epr_nlp = static_cast<const L1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_));
         DBG_ASSERT(dynamic_cast<const IpL1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_)));
