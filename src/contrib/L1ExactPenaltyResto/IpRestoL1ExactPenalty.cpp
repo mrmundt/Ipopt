@@ -278,6 +278,17 @@ void L1ExactPenaltyRestorationPhase::ComputeBoundMultiplierStep(Vector &delta_z,
     delta_z.Axpy(-1., curr_z);
 }
 
+    bool
+    L1ExactPenaltyRestorationPhase::InitializeImpl(const OptionsList &options,
+                                                   const std::string &prefix) {
+        return false;
+    }
+
+    void L1ExactPenaltyRestorationPhase::RegisterOptions(
+            SmartPtr<RegisteredOptions> roptions) {
+
+    }
+
     L1ExactPenaltyRestorationPhase::~L1ExactPenaltyRestorationPhase() = default;
 
 
