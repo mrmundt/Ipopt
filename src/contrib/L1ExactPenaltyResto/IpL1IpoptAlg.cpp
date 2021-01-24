@@ -30,7 +30,7 @@ L1IpoptAlg::L1IpoptAlg(
         mu_update_(mu_update),
         conv_check_(conv_check),
         iterate_initializer_(iterate_initializer),
-        iter_ouput_(iterate_initializer),
+        iter_ouput_(iter_output),
         hessian_updater_(hessian_updater),
         eq_multiplier_calculator_(eq_multiplier_calculator),
         l1exactpenalty_rho_updater_(l1exactpenalty_rho_updater)

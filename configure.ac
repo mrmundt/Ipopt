@@ -355,7 +355,7 @@ AM_CONDITIONAL([BUILD_JAVA], [test "$enable_java" != no])
 # is made)
 
 AC_SUBST(IPALLLIBS)
-IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
+IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../contrib/L1ExactPenaltyResto/lib_l1.la  ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
 
 AM_CONDITIONAL([BUILD_INEXACT], [test $use_inexact = yes])
 if test $use_inexact = yes; then
@@ -526,6 +526,7 @@ AC_CONFIG_FILES([Makefile
 		 src/Algorithm/LinearSolvers/Makefile
 		 src/Algorithm/Inexact/Makefile
 		 src/contrib/CGPenalty/Makefile
+         src/contrib/L1ExactPenaltyResto/Makefile
 		 src/contrib/LinearSolverLoader/Makefile
 		 src/Apps/Makefile
 		 src/Apps/AmplSolver/Makefile

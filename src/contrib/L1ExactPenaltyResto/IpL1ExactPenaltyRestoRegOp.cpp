@@ -13,7 +13,7 @@
 namespace Ipopt
 {
     void RegisterOptions_L1ExactPenaltyResto(
-        const SmartPtr<RegisteredOptions>& roptions;
+        const SmartPtr<RegisteredOptions>& roptions
     )
 {
     roptions->SetRegisteringCategory("l1 Exact Penalty");
