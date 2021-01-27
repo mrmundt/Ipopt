@@ -1306,7 +1306,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         resto_convCheck->SetOrigLSAcceptor(*LSacceptor);
     }
 
-    //return LineSearch;
+    return LineSearch;
 
 }
 
