@@ -17,6 +17,7 @@
 #include "IpInterfacesRegOp.hpp"
 #include "IpAlgorithmRegOp.hpp"
 #include "IpCGPenaltyRegOp.hpp"
+#include "IpL1ExactPenaltyRestoRegOp.hpp"
 #include "IpNLPBoundsRemover.hpp"
 
 #ifdef IPOPT_HAS_HSL
@@ -1239,7 +1240,9 @@ void IpoptApplication::RegisterAllIpoptOptions(
    RegisterOptions_Interfaces(roptions);
    RegisterOptions_Algorithm(roptions);
    RegisterOptions_CGPenalty(roptions);
+   RegisterOptions_L1ExactPenaltyResto(roptions); // @dthierry New!
    RegisterOptions_LinearSolvers(roptions);
+
 #ifdef BUILD_INEXACT
    RegisterOptions_Inexact(roptions);
 #endif

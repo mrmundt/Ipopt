@@ -18,7 +18,7 @@ namespace Ipopt
 {
     roptions->SetRegisteringCategory("l1 Exact Penalty");
     L1ExactPenaltyRestoData::RegisterOptions(roptions);
-    L1ExactPenaltyRestoCQ::RegisterOptions(roptions);
+    //L1ExactPenaltyRestoCQ::RegisterOptions(roptions);
     L1ExactPenaltyRestoIpoptNLP::RegisterOptions(roptions);
     L1ExactPenaltyRhoUpdater::RegisterOptions(roptions);
 

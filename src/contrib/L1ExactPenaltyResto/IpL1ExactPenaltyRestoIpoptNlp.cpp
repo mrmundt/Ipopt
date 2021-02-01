@@ -163,6 +163,7 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::h(const Vector &x,
     SmartPtr<Matrix> h_sum_mat = retPtr->GetCompNonConst(0, 0);
     SumSymMatrix* h_sum = static_cast<SumSymMatrix*>(GetRawPtr(h_sum_mat));
     h_sum->SetTerm(0, 1.0, *h_orig);
+    h_sum->SetTerm(1, 1., *getL1DiagMatDummy());
 
     return GetRawPtr(retPtr);
 
@@ -220,6 +221,26 @@ Number L1ExactPenaltyRestoIpoptNLP::Rho() const
     L1ExactPenaltyRestoIpoptNLP::h(const Vector &x, Number obj_factor,
                                    const Vector &yc, const Vector &yd) {
         return RestoIpoptNLP::h(x, obj_factor, yc, yd);
+    }
+
+    SmartPtr<const DiagMatrix> L1ExactPenaltyRestoIpoptNLP::getL1DiagMatDummy()
+    {
+        if(!IsValid(l1_diag_mat_dum_))
+        {
+
+            const CompoundSymMatrixSpace* h_comp_space =
+                    static_cast<const CompoundSymMatrixSpace*>(GetRawPtr(RestoIpoptNLP::HessianMatrixSpace()));
+
+            SmartPtr<const MatrixSpace> h_orig_space = h_comp_space->GetCompSpace(0, 0);
+            SmartPtr<DiagMatrixSpace> diag_mat_space = new DiagMatrixSpace(h_orig_space->NCols());
+
+            l1_diag_vec_dummy_ = DR_x()->MakeNew();
+            l1_diag_vec_dummy_->Set(0.);
+
+            l1_diag_mat_dum_ = diag_mat_space->MakeNewDiagMatrix();
+            l1_diag_mat_dum_->SetDiag(*l1_diag_vec_dummy_);
+        }
+    return ConstPtr(l1_diag_mat_dum_);
     }
 
 }

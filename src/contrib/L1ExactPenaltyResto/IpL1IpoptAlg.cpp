@@ -56,11 +56,12 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
 {
 
     DBG_START_METH("L1IpoptAlg::RegisterOptions", dbg_verbosity);
-    SmartPtr<const OptionsList> my_options;
-    my_options = &options;
+    SmartPtr<OptionsList> my_options;
+    my_options = new OptionsList(options);
+    my_options->SetStringValue("start_with_resto", "no", false);
     copyright_message_printed = true;
 
-    options.GetStringValue("linear_solver", linear_solver_, prefix);
+    //options.GetStringValue("linear_solver", linear_solver_, prefix);
 
     bool retvalue = IpData().Initialize(Jnlst(), *my_options, prefix);
     ASSERT_EXCEPTION(retvalue, FAILED_INITIALIZATION,
@@ -80,7 +81,7 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
     ASSERT_EXCEPTION(retvalue, FAILED_INITIALIZATION,
                      "The mu_update strategy failed to initialize.");
 
-    retvalue = search_dir_calculator_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), options, prefix);
+    retvalue = search_dir_calculator_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), *my_options, prefix);
     ASSERT_EXCEPTION(retvalue, FAILED_INITIALIZATION,
                      "The search_direction_calculator strategy failed to initialize.");
 

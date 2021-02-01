@@ -280,8 +280,10 @@ void L1ExactPenaltyRestorationPhase::ComputeBoundMultiplierStep(Vector &delta_z,
 
     bool
     L1ExactPenaltyRestorationPhase::InitializeImpl(const OptionsList &options,
-                                                   const std::string &prefix) {
-        return false;
+                                                   const std::string &prefix)
+    {
+        resto_options_ = new OptionsList(options);
+        return true;
     }
 
     void L1ExactPenaltyRestorationPhase::RegisterOptions(

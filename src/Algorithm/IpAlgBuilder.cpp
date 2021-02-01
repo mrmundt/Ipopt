@@ -230,6 +230,7 @@ void AlgorithmBuilder::RegisterOptions(
       "no", "use direct solver",
       "yes", "use iterative solver",
       "EXPERIMENTAL!");
+    roptions->SetRegisteringCategory("l1 Exact Penalty");
     roptions->AddStringOption2(
             "restoration_method",
             "Strategy for the restoration phase.",
@@ -1091,6 +1092,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
 
     SmartPtr<RestorationPhase> resto_phase;
     SmartPtr<RestoConvergenceCheck> resto_convCheck;
+    SmartPtr<L1ExactPenaltyRestoFilterConvCheck> resto_l1_convCheck;
     std::string resto_method;
     options.GetStringValue("restoration_method", resto_method, prefix);
 
@@ -1121,7 +1123,12 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         }
 
         // Convergence checkin the restoration phase
-        if(lsmethod == "filter")
+        if(resto_method == "l1")
+        {
+            // This could be better.
+            resto_l1_convCheck = new L1ExactPenaltyRestoFilterConvCheck();
+        }
+        else if(lsmethod == "filter")
         {
             resto_convCheck = new RestoFilterConvergenceCheck();
         }
@@ -1129,11 +1136,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         {
             resto_convCheck = new RestoPenaltyConvergenceCheck();
         }
-        else if(lsmethod == "l1")
-        {
-            // This could be better.
-            SmartPtr<L1ExactPenaltyRestoFilterConvCheck> resto_l1_convCheck = new L1ExactPenaltyRestoFilterConvCheck();
-        }
+
 
         // Line search method for the restoration phase
         SmartPtr<RestoRestorationPhase> resto_resto = new RestoRestorationPhase();
@@ -1153,7 +1156,14 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         {
             resto_LSacceptor == new PenaltyLSAcceptor(GetRawPtr(resto_PDSolver));
         }
-        resto_LineSearch = new BacktrackingLineSearch(resto_LSacceptor, GetRawPtr(resto_resto), GetRawPtr(resto_convCheck));
+        if(resto_method == "l1") {
+            resto_LineSearch = new BacktrackingLineSearch(resto_LSacceptor, GetRawPtr(resto_resto),
+                                                          GetRawPtr(resto_l1_convCheck));
+        }
+        else
+        {
+            resto_LineSearch = new BacktrackingLineSearch(resto_LSacceptor, GetRawPtr(resto_resto), GetRawPtr(resto_convCheck));
+        }
 
         // Create the mu update that will be used by the restoration phase algorithm
 
@@ -1235,7 +1245,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         }
 
         // Put together the overall restoration phase IP algorithm
-        SmartPtr<SearchDirectionCalculator> resto_SearchDirCalc;
+
         if(resto_lsacceptor == "cg-penalty")
         {
             resto_SearchDirCalc = new CGSearchDirCalculator(GetRawPtr(resto_PDSolver));
@@ -1272,7 +1282,7 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
                                                             GetRawPtr(
                                                                     resto_MuUpdate),
                                                             GetRawPtr(
-                                                                    resto_convCheck),
+                                                                    resto_l1_convCheck),
                                                             resto_IterInitializer,
                                                             resto_IterOutput,
                                                             resto_HessUpdater,

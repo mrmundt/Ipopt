@@ -56,7 +56,7 @@ private:
     bool rho_initialized_ = true;
     bool rho_has_changed_ = true;
 
-    Number SetRho(Number rho) {
+    void SetRho(Number rho) {
         rho_ = rho;
         rho_initialized_ = true;
         rho_has_changed_ = true;
