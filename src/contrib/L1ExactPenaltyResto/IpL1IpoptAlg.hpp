@@ -67,7 +67,7 @@ private:
     SmartPtr<LineSearch> line_search_;
     SmartPtr<MuUpdate> mu_update_;
     SmartPtr<ConvergenceCheck> conv_check_;
-    SmartPtr<IterateInitializer> iterate_initializer_;
+    SmartPtr<IterateInitializer>  iterate_initializer_;
     SmartPtr<IterationOutput> iter_ouput_;
     SmartPtr<HessianUpdater> hessian_updater_;
 

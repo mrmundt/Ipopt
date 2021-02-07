@@ -18,11 +18,7 @@ L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
         RestoIpoptNLP(orig_ip_nlp, orig_ip_data, orig_ip_cq),
         l1_ip_data_(l1_ip_data)
 {
-    SmartPtr<OrigIpoptNLP> mynlp = static_cast<OrigIpoptNLP*>(&OrigIpNLP());
-    SmartPtr<IpoptNLP> mynlp2 = &OrigIpNLP();
-    Number mycpu = mynlp->TotalFunctionEvaluationCpuTime();
-    std::cout << mycpu << std::endl;
-    RestoIpoptNLP::f_evals();
+
 }
 
 L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
@@ -50,7 +46,7 @@ bool L1ExactPenaltyRestoIpoptNLP::Initialize(
     Index l1_int;
     options.GetEnumValue("l1_objective_type", l1_int, prefix);
     l1_epr_objective_type_ = IpL1ExactPenaltyObjectiveType(l1_int);
-    return IpoptNLP::Initialize(jnlst, options, prefix);
+    return Ipopt::RestoIpoptNLP::Initialize(jnlst, options, prefix);
 }
 
 bool L1ExactPenaltyRestoIpoptNLP::l1_epr_inv_objective_type() const

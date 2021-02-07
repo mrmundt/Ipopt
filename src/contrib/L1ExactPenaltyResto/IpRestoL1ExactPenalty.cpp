@@ -117,9 +117,9 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
             Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
                            "Restoration phase converged to a point with small primal infeasibility.\n"
                            "Original primal inf is less than the tolerance.");
-            //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
-            //                "Restoration phase converged to a point with small primal infeasibility");
-            retval = 0;
+            THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
+                            "Restoration phase converged to a point with small primal infeasibility");
+            //retval = 0;
         }
         else
         {

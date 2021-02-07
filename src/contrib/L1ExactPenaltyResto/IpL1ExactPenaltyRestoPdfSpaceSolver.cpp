@@ -806,7 +806,7 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
     tmp = v_U.MakeNew();
     Pd_U.TransMultVector(1., *res.s(), 0., *tmp);
     tmp->ElementWiseMultiply(v_U);
-    resid.v_U_NonConst()->AddTwoVectors(-1., *tmp, -1., *rhs.v_U(), 1.);
+    resid.v_U_NonConst()->AddTwoVectors(-1., *tmp  , -1., *rhs.v_U(), 1.);
 
     DBG_PRINT_VECTOR(2, "resid", resid);
 

@@ -58,12 +58,15 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
     DBG_START_METH("L1IpoptAlg::RegisterOptions", dbg_verbosity);
     SmartPtr<OptionsList> my_options;
     my_options = new OptionsList(options);
+    bool retvalue = false;
+
     my_options->SetStringValue("start_with_resto", "no", false);
+    my_options->SetStringValue("resto.start_with_resto", "no", false);
     copyright_message_printed = true;
 
     //options.GetStringValue("linear_solver", linear_solver_, prefix);
 
-    bool retvalue = IpData().Initialize(Jnlst(), *my_options, prefix);
+    retvalue = IpData().Initialize(Jnlst(), *my_options, prefix);
     ASSERT_EXCEPTION(retvalue, FAILED_INITIALIZATION,
                      "the IpIpoptData object failed to initialize.");
     retvalue = IpCq().Initialize(Jnlst(), *my_options, prefix);
@@ -253,8 +256,8 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
     catch (TINY_STEP_DETECTED& exc)
     {
         exc.ReportException(Jnlst(), J_MOREDETAILED);
-        IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
-        retval = STOP_AT_ACCEPTABLE_POINT;
+        IpData().TimingStats().UpdateBarrierParameter().EndIfStarted();
+        retval = STOP_AT_TINY_STEP;
     }
     catch (ACCEPTABLE_POINT_REACHED& exc)
     {
@@ -408,7 +411,7 @@ void L1IpoptAlg::AcceptTrialPoint()
 
         SmartPtr<Vector> new_x_u = IpNLP().x_U()->MakeNew();
         IpNLP().Px_U()->TransMultVector(1.0, *IpData().trial()->x(), 0.0, *new_x_u);
-        new_x_u->Axpy(1.0, *IpCq().trial_compl_x_U());
+        new_x_u->Axpy(1.0, *IpCq().trial_slack_x_U());
 
         SmartPtr<Vector> new_d_l = IpNLP().d_L()->MakeNew();
         IpNLP().Pd_L()->TransMultVector(1.0, *IpData().trial()->s(), 0.0, *new_d_l);
@@ -465,7 +468,7 @@ void L1IpoptAlg::AcceptTrialPoint()
     if(max_correction > 0.)
     {
         Jnlst().Printf(J_DETAILED, J_MAIN,
-                       "Some value in v_L becomes too large - maximal correction = &8.2\n",
+                       "Some value in v_L becomes too large - maximal correction = &8.2e\n",
                        max_correction);
         corrected = true;
     }
@@ -482,7 +485,7 @@ void L1IpoptAlg::AcceptTrialPoint()
         corrected = true;
     }
     SmartPtr<IteratesVector> trial = IpData().trial()->MakeNewContainer();
-    trial->Set_bound_mult(*new_z_L, *new_z_U, *new_z_L, *new_v_U);
+    trial->Set_bound_mult(*new_z_L, *new_z_U, *new_v_L, *new_v_U);
     IpData().set_trial(trial);
 
     if(corrected)
@@ -504,7 +507,7 @@ void L1IpoptAlg::AcceptTrialPoint()
         if(Jnlst().ProduceOutput(J_MOREDETAILED, J_MAIN))
         {
             Jnlst().Printf(J_MOREDETAILED, J_MAIN,
-                           "dual infeasibility before last square multiplier update = %e\n",
+                           "dual infeasibility before least square multiplier update = %e\n",
                            IpCq().curr_dual_infeasibility(NORM_MAX));
         }
         IpData().Append_info_string("y ")
@@ -532,7 +535,7 @@ void L1IpoptAlg::AcceptTrialPoint()
             else
             {
                 Jnlst().Printf(J_DETAILED, J_MAIN,
-                               "Recalculation of y multpliers skipped because eq_mult_calc returned false. \n");
+                               "Recalculation of y multipliers skipped because eq_mult_calc returned false. \n");
             }
         }
     }
@@ -707,7 +710,7 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
         return 0.;
     }
     SmartPtr<Vector> one_over_s = trial_z.MakeNew();
-    one_over_s->Copy(trial_compl);
+    one_over_s->Copy(trial_slack);
     one_over_s->ElementWiseReciprocal();
 
     SmartPtr<Vector> step_z = trial_z.MakeNew();

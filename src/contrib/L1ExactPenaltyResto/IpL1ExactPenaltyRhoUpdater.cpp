@@ -261,8 +261,8 @@ DiagMatrix &L1ExactPenaltyRhoUpdater::Tmp_Sigma_x()
 
 void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     Number trial_rho = ComputeRhoTrial();
-    Number old_rho;
-    Number new_rho;
+    Number old_rho = L1EPRAddData().GetCurrentRho();
+    Number new_rho = old_rho;
 
     l1_epr_has_changed_ = true;
 

@@ -34,7 +34,10 @@ bool L1ExactPenaltyRestoFilterConvCheck::InitializeImpl(
         const OptionsList &options, const std::string &prefix)
 {
     options.GetIntegerValue("max_iter", maximum_iters_l1_, prefix);
+
+    // Test.
     return OptimalityErrorConvergenceCheck::InitializeImpl(options, prefix);
+    first_resto_iter_ = true;
 }
 
 ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckConvergence(
@@ -49,9 +52,13 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
     SmartPtr<const Vector> x = IpData().curr()->x();
     const CompoundVector* cx = static_cast<const CompoundVector*>(GetRawPtr(x));
     DBG_ASSERT(dynamic_cast<const CompoundVector*>(GetRawPtr(x)));
+    SmartPtr<const Vector> s = IpData().curr()->s();
+    const CompoundVector* cs = static_cast<const CompoundVector*>(GetRawPtr(s));
+    DBG_ASSERT(dynamic_cast<const CompoundVector*>(GetRawPtr(s)));
+    DBG_ASSERT(cs->NComps() == 1);
     SmartPtr<IteratesVector> trial = orig_ip_data->curr()->MakeNewContainer();
     trial->Set_x(*cx->GetComp(0));
-    trial->Set_s(*IpData().curr()->s());
+    trial->Set_s(*cs->GetComp(0));
     orig_ip_data->set_trial(trial);
 
     if(call_intermediate_callback) {
@@ -120,14 +127,15 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
     //{
     //    orig_inf_pr_max = 0.;
     //}
-
+    /*
     if( first_resto_iter_ )
     {
         Jnlst().Printf(J_DETAILED, J_MAIN,
                        "This is the first iteration - continue to take at least one step.\n");
         status = CONTINUE;
     }
-    else if( orig_ip_cq->IsSquareProblem() && orig_trial_inf_pr <= Min(orig_ip_data->tol(), orig_constr_viol_tol_) )
+     */
+    if( orig_ip_cq->IsSquareProblem() && orig_trial_inf_pr <= Min(orig_ip_data->tol(), orig_constr_viol_tol_) )
     {
         Jnlst().Printf(J_DETAILED, J_MAIN,
                        "Restoration phase found points satisfying feasibility tolerance in square problem.\n");
