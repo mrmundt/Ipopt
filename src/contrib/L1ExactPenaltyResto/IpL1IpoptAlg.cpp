@@ -280,7 +280,7 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
     {
         exc.ReportException(Jnlst(), J_MOREDETAILED);
         IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
-        retval = FEASIBLE_POINT_FOUND; // Instead of declaring failure.
+        retval = SUCCESS; // Instead of declaring failure.
     }
     catch(RESTORATION_FAILED& exc)
     {

@@ -117,8 +117,8 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
             Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
                            "Restoration phase converged to a point with small primal infeasibility.\n"
                            "Original primal inf is less than the tolerance.");
-            THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
-                            "Restoration phase converged to a point with small primal infeasibility");
+            //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
+            //                "Restoration phase converged to a point with small primal infeasibility");
             //retval = 0;
         }
         else
@@ -154,7 +154,8 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
     else
     {
         Jnlst().Printf(J_ERROR, J_MAIN,
-                       "Unknown return status.\n I.e. not SUCCESS, MAXITER_EXCEED, RESTO_CPU_EXCEED, LOCAL_INFES, RESTO_FAIL so far.");
+                       "Unknown return status.\n "
+                       "I.e. not SUCCESS, MAXITER_EXCEED, RESTO_CPU_EXCEED, LOCAL_INFES, RESTO_FAIL so far.");
         retval = 1;
     }
     if (retval == 0)
@@ -193,7 +194,7 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
         ComputeBoundMultiplierStep(*delta->z_U_NonConst(),
                                    *IpData().curr()->z_U(),
                                    *IpCq().curr_slack_x_U(),
-                                   *IpCq().trial_slack_s_L());
+                                   *IpCq().trial_slack_x_U());
         ComputeBoundMultiplierStep(*delta->v_L_NonConst(),
                                    *IpData().curr()->v_L(),
                                    *IpCq().curr_slack_s_L(),
@@ -215,7 +216,7 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
                                                           *delta->v_U_NonConst());
 
         Jnlst().Printf(J_DETAILED, J_LINE_SEARCH,
-                       "Step size for bound multipliers: %8.2\n", alpha_dual);
+                       "Step size for bound multipliers: %8.2e\n", alpha_dual);
 
         IpData().SetTrialBoundMultipliersFromStep(alpha_dual,
                                                   *delta->z_L(),
@@ -258,6 +259,11 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
         IpData().Set_info_skip_output(true);
         IpData().Set_info_iters_since_header(l1_ip_data->info_iters_since_header());
         IpData().Set_info_last_output(l1_ip_data->info_last_output());
+        IpData().AcceptTrialPoint();
+        Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
+                       "The L1-EP has reached a stationary point.");
+        THROW_EXCEPTION(ACCEPTABLE_POINT_REACHED, "The L1-EP has reached a stationary point.")
+
 
     }
     return (retval == 0);
@@ -283,7 +289,38 @@ void L1ExactPenaltyRestorationPhase::ComputeBoundMultiplierStep(Vector &delta_z,
                                                    const std::string &prefix)
     {
         resto_options_ = new OptionsList(options);
-        return true;
+
+        options.GetNumericValue("constr_mult_reset_threshold", constr_mult_reset_threshold_, prefix);
+        options.GetNumericValue("bound_mult_reset_threshold", bound_mult_reset_threshold_, prefix);
+
+        // This is registered in OptimalityErrorConvergenceCheck
+        options.GetNumericValue("constr_viol_tol", constr_viol_tol_, prefix);
+
+        // Avoid that the restoration phase is trigged by user option in
+        // first iteration of the restoration phase
+        resto_options_->SetStringValue("resto.start_with_resto", "no");
+
+        // We want the default for the theta_max_fact in the restoration
+        // phase higher than for the regular phase
+        Number theta_max_fact;
+        if( !options.GetNumericValue("resto.theta_max_fact", theta_max_fact, "") )
+        {
+            resto_options_->SetNumericValue("resto.theta_max_fact", 1e8);
+        }
+
+        if( !options.GetNumericValue("resto_failure_feasibility_threshold", resto_failure_feasibility_threshold_, prefix) )
+        {
+            resto_failure_feasibility_threshold_ = 1e2 * IpData().tol();
+        }
+
+        count_restorations_ = 0;
+
+        bool retvalue = true;
+        if( IsValid(eq_mult_calculator_) )
+        {
+            retvalue = eq_mult_calculator_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), options, prefix);
+        }
+        return retvalue;
     }
 
     void L1ExactPenaltyRestorationPhase::RegisterOptions(

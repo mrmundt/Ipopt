@@ -17,7 +17,7 @@ public:
             AugSystemSolver& augSysSolver,
             PDPerturbationHandler& perturbHandler
     );
-    virtual ~L1ExactPenaltyRestoPDFSpaceSolver();
+    ~L1ExactPenaltyRestoPDFSpaceSolver() override;
 
     bool InitializeImpl(
             const OptionsList& options,

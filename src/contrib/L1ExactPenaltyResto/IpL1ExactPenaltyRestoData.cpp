@@ -7,9 +7,9 @@
 namespace Ipopt
 {
 L1ExactPenaltyRestoData::L1ExactPenaltyRestoData()
-{ }
+= default;
 
-L1ExactPenaltyRestoData::~L1ExactPenaltyRestoData() noexcept {}
+L1ExactPenaltyRestoData::~L1ExactPenaltyRestoData() noexcept = default;
 
 void L1ExactPenaltyRestoData::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions)
@@ -19,6 +19,7 @@ void L1ExactPenaltyRestoData::RegisterOptions(
             "Initial value of rho.",
             0.0, true, 1e+03,
             "Initial value of rho for the l1-exact penalty formulation");
+
 }
 
 
@@ -36,6 +37,7 @@ bool L1ExactPenaltyRestoData::InitializeDataStructures() {
     rho_ = rho_init_;
     rho_trial_ = rho_init_;
     rho_has_changed_ = false;
+    return true;
 }
 
 void L1ExactPenaltyRestoData::AcceptTrialPoint()

@@ -40,7 +40,7 @@ private:
     SmartPtr<OptionsList> resto_options_;
     Number constr_mult_reset_threshold_;
     Number bound_mult_reset_threshold_;
-    bool expect_infeasible_problem_;
+
 
     Number constr_viol_tol_;
     Number resto_failure_feasibility_threshold_;

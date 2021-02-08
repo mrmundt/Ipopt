@@ -36,8 +36,8 @@ bool L1ExactPenaltyRestoFilterConvCheck::InitializeImpl(
     options.GetIntegerValue("max_iter", maximum_iters_l1_, prefix);
 
     // Test.
-    return OptimalityErrorConvergenceCheck::InitializeImpl(options, prefix);
     first_resto_iter_ = true;
+    return OptimalityErrorConvergenceCheck::InitializeImpl(options, prefix);
 }
 
 ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckConvergence(
@@ -193,6 +193,8 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
             }
         }
     }
+    first_resto_iter_ = false;
+    return status;
 
 }
 

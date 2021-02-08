@@ -15,7 +15,8 @@ namespace Ipopt
 L1ExactPenaltyRhoUpdater::L1ExactPenaltyRhoUpdater(
         const SmartPtr<BacktrackingLSAcceptor> &resto_bls_acceptor) :
         ip_bls_acceptor_(resto_bls_acceptor),
-        trial_rho_cache_(2)
+        trial_rho_cache_(2),
+        l1_epr_update_kind_(LINEAR)
 {
     DBG_START_METH("L1ExactPenaltyRhoUpdater::L1ExactPenaltyRhoUpdater()", dbg_verbosity);
 }
@@ -56,6 +57,7 @@ bool L1ExactPenaltyRhoUpdater::InitializeImpl(const OptionsList &options,
     l1_epr_update_kind_ = RhoUpdateKind(l1rhotype);
     options.GetNumericValue("l1_epsilon", l1_epr_epsi_, prefix);
     options.GetNumericValue("l1_penalty_feas_max", l1_epr_max_rho, prefix);
+    return true;
 }
 
 
@@ -135,7 +137,7 @@ Number L1ExactPenaltyRhoUpdater::ComputeRhoTrial()
     Number sigW = 0.;
     //THROW_EXCEPTION(DAVS, "fail\n");
     //ASSERT_EXCEPTION(false, DAVS,"fail");
-    if (!(l1_epr_update_kind_ == LINEAR)) { // :(
+    if (l1_epr_update_kind_ != LINEAR) { // :(
         // fetch dx_R and W_R
         SmartPtr<const SymMatrix> W_R = IpData().W();
 
@@ -282,7 +284,7 @@ void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     }
     L1EPRAddData().SetRhoTrial(new_rho);
     L1EPRAddData().SetRhoStatus(l1_epr_has_changed_);
-
+    Jnlst().Printf(J_ITERSUMMARY, J_MAIN, "Rho val %7.2e\n", new_rho);
     }
 
 void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
@@ -303,7 +305,7 @@ L1ExactPenaltyRestoData &L1ExactPenaltyRhoUpdater::L1EPRAddData()
 }
 
     L1ExactPenaltyRhoUpdater::~L1ExactPenaltyRhoUpdater()
-    { }
+    = default;
 
 
 }
