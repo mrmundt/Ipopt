@@ -67,6 +67,7 @@
 #include "IpMc19TSymScalingMethod.hpp"
 #include "IpPardisoSolverInterface.hpp"
 #include "IpSlackBasedTSymScalingMethod.hpp"
+#include "IpL1ExactPenaltyOutput.hpp"
 
 #ifdef IPOPT_HAS_WSMP
 # include "IpWsmpSolverInterface.hpp"
@@ -1228,9 +1229,17 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         resto_IterInitializer = new RestoIterateInitializer(resto_EqMultCalculator);
 
         // Create the object for the iteration output during restoration
-        SmartPtr<OrigIterationOutput> resto_OrigIterOutput = NULL;
+        SmartPtr<OrigIterationOutput> resto_OrigIterOutput = nullptr;
         // new OrigIterationOutput();
-        resto_IterOutput = new RestoIterationOutput(resto_OrigIterOutput);
+        if (resto_method == "l1")
+        {
+            resto_IterOutput = new L1ExactPenaltyOutput(resto_OrigIterOutput);
+        }
+        else
+        {
+            resto_IterOutput = new RestoIterationOutput(resto_OrigIterOutput);
+        }
+
 
         // Get the Hessian Updater for the restoration phase
 

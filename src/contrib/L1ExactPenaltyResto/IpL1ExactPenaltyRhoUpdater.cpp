@@ -284,7 +284,7 @@ void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     }
     L1EPRAddData().SetRhoTrial(new_rho);
     L1EPRAddData().SetRhoStatus(l1_epr_has_changed_);
-    Jnlst().Printf(J_ITERSUMMARY, J_MAIN, "Rho val %7.2e\n", new_rho);
+    Jnlst().Printf(J_DETAILED, J_MAIN, "Rho val %7.2e\n", new_rho);
     }
 
 void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
