@@ -407,7 +407,7 @@ void L1IpoptAlg::AcceptTrialPoint()
 
         SmartPtr<Vector> new_x_l = IpNLP().x_L()->MakeNew();
         IpNLP().Px_L()->TransMultVector(1.0, *IpData().trial()->x(), 0.0, *new_x_l);
-        new_x_l->Axpy(-1.0, *IpCq().trial_slack_s_L());
+        new_x_l->Axpy(-1.0, *IpCq().trial_slack_x_L());
 
         SmartPtr<Vector> new_x_u = IpNLP().x_U()->MakeNew();
         IpNLP().Px_U()->TransMultVector(1.0, *IpData().trial()->x(), 0.0, *new_x_u);
