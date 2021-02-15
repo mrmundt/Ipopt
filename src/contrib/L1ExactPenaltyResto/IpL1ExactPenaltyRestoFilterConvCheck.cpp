@@ -20,11 +20,6 @@ L1ExactPenaltyRestoFilterConvCheck::L1ExactPenaltyRestoFilterConvCheck()
                   dbg_verbosity);
 }
 
-L1ExactPenaltyRestoFilterConvCheck::~L1ExactPenaltyRestoFilterConvCheck() noexcept
-{
-    DBG_START_FUN("L1ExactPenaltyRestoFilterConvCheck::~L1ExactPenaltyRestoFilterConvCheck()",
-                  dbg_verbosity);
-}
 
 void L1ExactPenaltyRestoFilterConvCheck::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions)
@@ -43,18 +38,18 @@ bool L1ExactPenaltyRestoFilterConvCheck::InitializeImpl(
 ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckConvergence(
         bool call_intermediate_callback)
 {
-    const L1ExactPenaltyRestoIpoptNLP* l1epr_ipopt_nlp = static_cast<const L1ExactPenaltyRestoIpoptNLP*>(&IpNLP());
-    DBG_ASSERT(dynamic_cast<const L1ExactPenaltyRestoIpoptNLP*>(&IpNLP()))
+    auto l1epr_ipopt_nlp = dynamic_cast<const L1ExactPenaltyRestoIpoptNLP*>(&IpNLP());
+    DBG_ASSERT(l1epr_ipopt_nlp);
 
     SmartPtr<IpoptData> orig_ip_data = &l1epr_ipopt_nlp->OrigIpData();
     SmartPtr<IpoptCalculatedQuantities> orig_ip_cq = &l1epr_ipopt_nlp->OrigIpCq();
 
     SmartPtr<const Vector> x = IpData().curr()->x();
-    const CompoundVector* cx = static_cast<const CompoundVector*>(GetRawPtr(x));
-    DBG_ASSERT(dynamic_cast<const CompoundVector*>(GetRawPtr(x)));
+    auto cx = dynamic_cast<const CompoundVector*>(GetRawPtr(x));
+    DBG_ASSERT(]cx);
     SmartPtr<const Vector> s = IpData().curr()->s();
-    const CompoundVector* cs = static_cast<const CompoundVector*>(GetRawPtr(s));
-    DBG_ASSERT(dynamic_cast<const CompoundVector*>(GetRawPtr(s)));
+    auto cs = dynamic_cast<const CompoundVector*>(GetRawPtr(s));
+    DBG_ASSERT(cs);
     DBG_ASSERT(cs->NComps() == 1);
     SmartPtr<IteratesVector> trial = orig_ip_data->curr()->MakeNewContainer();
     trial->Set_x(*cx->GetComp(0));

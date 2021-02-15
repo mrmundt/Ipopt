@@ -22,7 +22,7 @@ public:
             const SmartPtr<BacktrackingLSAcceptor>& resto_bls_acceptor
             );
 
-    ~L1ExactPenaltyRhoUpdater();
+    ~L1ExactPenaltyRhoUpdater() override = default;
 
     bool InitializeImpl(
             const OptionsList& options,
@@ -33,7 +33,7 @@ public:
             SmartPtr<RegisteredOptions> roptions
             );
 
-    void UpdateRhoTrial();
+    bool UpdateRhoTrial();
     void UpdateRhoAction();
     enum RhoUpdateKind{
         QUAD=0,
@@ -42,14 +42,16 @@ public:
         CONST
     };
 
-private:
+    L1ExactPenaltyRhoUpdater() = delete;
     L1ExactPenaltyRhoUpdater(
             const L1ExactPenaltyRhoUpdater&
-            );
+    ) = delete;
 
     void operator=(
             const L1ExactPenaltyRhoUpdater&
-            );
+    ) = delete;
+
+private:
 
     SmartPtr<BacktrackingLSAcceptor> ip_bls_acceptor_;
 

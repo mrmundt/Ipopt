@@ -6,10 +6,7 @@
 
 namespace Ipopt
 {
-L1ExactPenaltyRestoData::L1ExactPenaltyRestoData()
-= default;
 
-L1ExactPenaltyRestoData::~L1ExactPenaltyRestoData() noexcept = default;
 
 void L1ExactPenaltyRestoData::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions)

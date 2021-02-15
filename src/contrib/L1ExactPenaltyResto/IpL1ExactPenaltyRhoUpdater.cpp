@@ -261,10 +261,16 @@ DiagMatrix &L1ExactPenaltyRhoUpdater::Tmp_Sigma_x()
     return *Sigma_x_;
 }
 
-void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
+bool L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     Number trial_rho = ComputeRhoTrial();
     Number old_rho = L1EPRAddData().GetCurrentRho();
     Number new_rho = old_rho;
+
+    if (l1_epr_update_kind_ == CONST)
+    {
+        L1EPRAddData().SetRhoTrial(new_rho);
+        return false;
+    } // if fixed
 
     l1_epr_has_changed_ = true;
 
@@ -285,13 +291,15 @@ void L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     L1EPRAddData().SetRhoTrial(new_rho);
     L1EPRAddData().SetRhoStatus(l1_epr_has_changed_);
     Jnlst().Printf(J_DETAILED, J_MAIN, "Rho val %7.2e\n", new_rho);
+    return l1_epr_has_changed_;
     }
 
 void L1ExactPenaltyRhoUpdater::UpdateRhoAction()
 {
     L1EPRAddData().AcceptRhoTrial();
     // Make this optional.
-    if( resto_lsacceptor_option_ == "filter" ){
+    // If we use a filter AND if the penalty has changed
+    if( resto_lsacceptor_option_ == "filter" && l1_epr_has_changed_){
         auto ip_flsa_ = dynamic_cast<FilterLSAcceptor*>(GetRawPtr(ip_bls_acceptor_));
         ip_flsa_->Reset();
     }
@@ -304,8 +312,7 @@ L1ExactPenaltyRestoData &L1ExactPenaltyRhoUpdater::L1EPRAddData()
     return *retval;
 }
 
-    L1ExactPenaltyRhoUpdater::~L1ExactPenaltyRhoUpdater()
-    = default;
+
 
 
 }

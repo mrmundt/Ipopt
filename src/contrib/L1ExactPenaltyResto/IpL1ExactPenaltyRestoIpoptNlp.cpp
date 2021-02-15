@@ -105,17 +105,20 @@ SmartPtr<const Vector> L1ExactPenaltyRestoIpoptNLP::grad_f(
     SmartPtr<Vector> retPtr = x.MakeNew();
     retPtr->Set(fact_c);
 
-    const CompoundVector* c_vec_in = static_cast<const CompoundVector*>(&x);
+    // Evaluate the gradient of f using only the x part of x_in
+    auto c_vec_in = dynamic_cast<const CompoundVector*>(&x);
+    DBG_ASSERT(c_vec_in);
     SmartPtr<const Vector> x_only_in = c_vec_in->GetComp(0);
-
     SmartPtr<const Vector> orig_gf = OrigIpNLP().grad_f(*x_only_in);
 
     // Get x component from retptr, copy orig_gf, scale
     //       CompoundVector* c_vec = static_cast<CompoundVector*>(GetRawPtr(retPtr));
-    CompoundVector* c_vec = static_cast<CompoundVector*>(GetRawPtr(retPtr));
+    auto c_vec = dynamic_cast<CompoundVector*>(GetRawPtr(retPtr));
+    DBG_ASSERT(c_vec);
     SmartPtr<Vector> x_only = c_vec->GetCompNonConst(0);
-    x_only->Copy(*orig_gf);
-    x_only->Scal(fact_f);
+    x_only->AddOneVector(fact_f, *orig_gf, 0.0);
+    //x_only->Copy(*orig_gf);
+    //x_only->Scal(fact_f);
     return ConstPtr(retPtr);
 }
 

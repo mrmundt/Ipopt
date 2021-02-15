@@ -16,7 +16,7 @@ class L1ExactPenaltyRestoFilterConvCheck: public OptimalityErrorConvergenceCheck
 public:
     L1ExactPenaltyRestoFilterConvCheck();
 
-    ~L1ExactPenaltyRestoFilterConvCheck() override;
+    ~L1ExactPenaltyRestoFilterConvCheck() override = default;
 
     bool InitializeImpl(
             const OptionsList& options,
@@ -27,9 +27,6 @@ public:
             bool call_intermediate_callback = true
             ) override;
 
-    virtual void SetOirgLSAcceptor(
-            const BacktrackingLSAcceptor& orig_ls_acceptor
-            ) { }
 
     static void RegisterOptions(
             SmartPtr<RegisteredOptions> roptions

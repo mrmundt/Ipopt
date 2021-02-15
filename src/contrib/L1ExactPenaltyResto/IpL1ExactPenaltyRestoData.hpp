@@ -13,9 +13,11 @@ namespace Ipopt
 class L1ExactPenaltyRestoData: public IpoptAdditionalData
 {
 public:
-    L1ExactPenaltyRestoData();
+    L1ExactPenaltyRestoData() = default;
 
-    virtual ~L1ExactPenaltyRestoData() override;
+    ~L1ExactPenaltyRestoData() override = default;
+    L1ExactPenaltyRestoData(const L1ExactPenaltyRestoData&) = delete;
+    L1ExactPenaltyRestoData& operator=(const L1ExactPenaltyRestoData&) = delete;
 
     bool Initialize(
             const Journalist& jnlst,
