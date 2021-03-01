@@ -24,6 +24,7 @@ public:
             const std::string& prefix
             ) override;
 
+
     bool Solve(
             Number alpha,
             Number beta,
@@ -115,6 +116,8 @@ private:
             const IteratesVector& res,
             const IteratesVector& resid
     );
+
+    void ScaleInvRhoRes(IteratesVector& res);
 };
 }
 

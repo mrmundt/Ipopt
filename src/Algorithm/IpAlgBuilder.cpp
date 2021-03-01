@@ -4,6 +4,7 @@
 //
 // Authors:  Carl Laird, Andreas Waechter     IBM    2004-09-29
 
+#include <IpL1ExactPenaltyLeastSquareMults.hpp>
 #include "IpoptConfig.h"
 #include "IpAlgBuilder.hpp"
 
@@ -1225,7 +1226,15 @@ SmartPtr<LineSearch> AlgorithmBuilder::BuildLineSearch(
         }
 
         // Initialization of the iterates for the restoration phase.
-        resto_EqMultCalculator = new LeastSquareMultipliers(*resto_AugSolver);
+        if (resto_method == "l1")
+        {
+            resto_EqMultCalculator = new L1ExactPenaltyLeastSquareMults(*resto_AugSolver);
+        }
+        else
+        {
+            resto_EqMultCalculator = new LeastSquareMultipliers(*resto_AugSolver);
+        }
+
         resto_IterInitializer = new RestoIterateInitializer(resto_EqMultCalculator);
 
         // Create the object for the iteration output during restoration

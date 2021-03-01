@@ -419,23 +419,28 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     // slack_x_L^-1 * rhs_z_L  = (z_L - slack_z_L^-1 * mu) /rho = new_rhs_z_L
     // thus (grad_f - z_L)/rho + J_cT * y_c + (new_rhs_z_L) =
     // (grad_f - slack_z_L^-1 * mu)/rho + J_cT * y_c . Which is what I want.
+    // Note that the quantity (grad_f - z_L)/rho + J_cT * y_c is curr_grad_lag_with_damping_x(), which has been
+    // Modified for the l1 case.
     SmartPtr<Vector> augRhs_x = rhs.x()->MakeNewCopy();
     if (rho_inv_obj)
     {
-        tmp = rhs.z_L()->MakeNewCopy();
         CompoundVector* ctmp;
+
+        tmp = rhs.z_L()->MakeNewCopy();
         SmartPtr<Vector> tmp_x;
-        ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        ctmp = dynamic_cast<CompoundVector*>(GetRawPtr(tmp));
         tmp_x = ctmp->GetCompNonConst(0);
-        tmp_x->Scal(1/rho);
+        tmp_x->Scal(1./rho);
         Px_L.AddMSinvZ(1.0, slack_x_L, *tmp, *augRhs_x);
+
         tmp = rhs.z_U()->MakeNewCopy();
-        ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        ctmp = dynamic_cast<CompoundVector*>(GetRawPtr(tmp));
         tmp_x = ctmp->GetCompNonConst(0);
-        tmp_x->Scal(1/rho);
+        tmp_x->Scal(1./rho);
         Px_U.AddMSinvZ(-1.0, slack_x_U, *tmp, *augRhs_x);
     } else{
-        Px_L.AddMSinvZ(1.0, slack_x_L, *rhs.z_L(), *augRhs_x);
+        Px_L.AddMSinvZ(1.0, slack_x_L, *rhs.z_L(),
+                       *augRhs_x);
         Px_U.AddMSinvZ(-1.0, slack_x_U, *rhs.z_U(), *augRhs_x);
     }
 
@@ -443,7 +448,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     SmartPtr<Vector> augRhs_s = rhs.s()->MakeNewCopy();
     if (rho_inv_obj)
     {
-        s_fact = 1/rho;
+        s_fact = 1./rho;
     }
     Pd_L.AddMSinvZ(s_fact, slack_s_L, *rhs.v_L(), *augRhs_s);
     Pd_U.AddMSinvZ(-s_fact, slack_s_U, *rhs.v_U(), *augRhs_s);
@@ -678,6 +683,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     }
 
     // Compute the remaining sol Vectors
+
+    // This needs to be changed.
     Px_L.SinvBlrmZMTdBr(-1., slack_x_L, *rhs.z_L(), z_L, *sol->x(), *sol->z_L_NonConst());
     Px_U.SinvBlrmZMTdBr(1., slack_x_U, *rhs.z_U(), z_U, *sol->x(), *sol->z_U_NonConst());
     Pd_L.SinvBlrmZMTdBr(-1., slack_s_L, *rhs.v_L(), v_L, *sol->s(), *sol->v_L_NonConst());
@@ -743,7 +750,7 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
     Px_U.MultVector(1., *res.z_U(), 1., *tmp);
     if (rho_inv_obj)
     {
-        CompoundVector* ctmp = static_cast<CompoundVector*>(GetRawPtr(tmp));
+        auto ctmp = dynamic_cast<CompoundVector*>(GetRawPtr(tmp));
         SmartPtr<Vector> tmp_x = ctmp->GetCompNonConst(0);
         tmp_x->Scal(1/rho);
     }
@@ -806,7 +813,7 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
     tmp = v_U.MakeNew();
     Pd_U.TransMultVector(1., *res.s(), 0., *tmp);
     tmp->ElementWiseMultiply(v_U);
-    resid.v_U_NonConst()->AddTwoVectors(-1., *tmp  , -1., *rhs.v_U(), 1.);
+    resid.v_U_NonConst()->AddTwoVectors(-1., *tmp, -1., *rhs.v_U(), 1.);
 
     DBG_PRINT_VECTOR(2, "resid", resid);
 
@@ -861,5 +868,40 @@ Number L1ExactPenaltyRestoPDFSpaceSolver::ComputeResidualRatio(
         Number max_cond = 1e6;
         return nrm_resid / (Min(nrm_res, max_cond * nrm_rhs) + nrm_rhs);
     }
+}
+
+void L1ExactPenaltyRestoPDFSpaceSolver::ScaleInvRhoRes(IteratesVector &res) {
+    auto l1EprData = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData());
+    DBG_ASSERT(l1EprData);
+    auto l1EprNlp = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP());
+    DBG_ASSERT(l1EprNlp);
+
+    Number rho = l1EprData->GetCurrentRho();
+
+    SmartPtr<Vector> dummy_vec;
+    SmartPtr<CompoundVector> dummy_vC;
+    SmartPtr<Vector> dummy_vi;
+
+    dummy_vec = res.z_L_NonConst();
+    dummy_vC = dynamic_cast<CompoundVector*>(GetRawPtr(dummy_vec));
+    DBG_ASSERT(dummy_vC);
+    for(Index i=1; i<dummy_vC->NComps(); i++)
+    {
+        dummy_vi = dummy_vC->GetCompNonConst(i);
+        dummy_vi->Scal(rho);
+    }
+    // z_U
+    dummy_vec = res.z_U_NonConst();
+    dummy_vC = dynamic_cast<CompoundVector*>(GetRawPtr(dummy_vec));
+    DBG_ASSERT(dummy_vC);
+    for(Index i=1; i<dummy_vC->NComps(); i++)
+    {
+        dummy_vi = dummy_vC->GetCompNonConst(i);
+        dummy_vi->Scal(rho);
+    }
+
+
+
+
 }
 }

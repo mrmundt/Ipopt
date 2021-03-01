@@ -35,7 +35,7 @@ public:
             const SmartPtr<IterationOutput>&           iter_output,
             const SmartPtr<HessianUpdater>&            hessian_updater,
             const SmartPtr<L1ExactPenaltyRhoUpdater>&  l1exactpenalty_rho_updater,
-            const SmartPtr<EqMultiplierCalculator>&    eq_multiplier_calculator = NULL);
+            const SmartPtr<EqMultiplierCalculator>&    eq_multiplier_calculator = nullptr);
 
     ~L1IpoptAlg() override;
 
@@ -52,17 +52,11 @@ public:
             SmartPtr<RegisteredOptions> roptions
             );
 
-    static void print_copyright_message(
-            const Journalist& jnlst
-            );
+    L1IpoptAlg() = delete;
+    L1IpoptAlg& operator =(const L1IpoptAlg&) = delete;
+    L1IpoptAlg(const L1IpoptAlg&) = delete;
 
 private:
-    L1IpoptAlg();
-
-    L1IpoptAlg(
-            const L1IpoptAlg&
-            );
-
     SmartPtr<SearchDirectionCalculator> search_dir_calculator_;
     SmartPtr<LineSearch> line_search_;
     SmartPtr<MuUpdate> mu_update_;
@@ -83,12 +77,12 @@ private:
     void InitializeIterates();
     void PrintProblemStatistics();
     void ComputeFeasibilityMultipliers();
-    bool skip_print_problem_stats_;
-    Number kappa_sigma_;
-    bool recalc_y_;
-    Number recalc_y_feas_tol_;
-    bool mehrotra_algorithm_;
-    std::string linear_solver_;
+    //bool skip_print_problem_stats_;
+    Number kappa_sigma_l1_{1E+10};
+    bool recalc_y_l1_{false};
+    Number recalc_y_feas_tol_l1_{1E-06};
+    //bool mehrotra_algorithm_;
+    //std::string linear_solver_;
 
     void calc_number_of_bounds(
             const Vector& x,

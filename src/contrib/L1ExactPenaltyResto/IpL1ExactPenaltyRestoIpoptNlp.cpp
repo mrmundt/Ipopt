@@ -46,6 +46,9 @@ bool L1ExactPenaltyRestoIpoptNLP::Initialize(
     Index l1_int;
     options.GetEnumValue("l1_objective_type", l1_int, prefix);
     l1_epr_objective_type_ = IpL1ExactPenaltyObjectiveType(l1_int);
+    Index enum_int;
+    options.GetEnumValue("hessian_approximation", enum_int, prefix);
+    hessian_approximation_l1_ = HessianApproximationType(enum_int);
     return Ipopt::RestoIpoptNLP::Initialize(jnlst, options, prefix);
 }
 
@@ -173,8 +176,8 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::uninitialized_h()
     SmartPtr<CompoundSymMatrix> retPtr;
     const CompoundSymMatrixSpace* h_comp_space =
             static_cast<const CompoundSymMatrixSpace*>(GetRawPtr(RestoIpoptNLP::HessianMatrixSpace()));
-    HessianApproximationType hessian_approximation_ = HessianApproximationType(0);
-    if( hessian_approximation_ == LIMITED_MEMORY )
+
+    if( hessian_approximation_l1_ == LIMITED_MEMORY )
     {
         retPtr = h_comp_space->MakeNewCompoundSymMatrix();
     }
@@ -183,7 +186,7 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::uninitialized_h()
         SmartPtr<const SymMatrix> h_con_orig = RestoIpoptNLP::OrigIpNLP().uninitialized_h();
         retPtr = h_comp_space->MakeNewCompoundSymMatrix();
         SmartPtr<Matrix> h_sum_mat = retPtr->GetCompNonConst(0, 0);
-        SmartPtr<SumSymMatrix> h_sum = static_cast<SumSymMatrix*>(GetRawPtr(h_sum_mat));
+        SmartPtr<SumSymMatrix> h_sum = dynamic_cast<SumSymMatrix*>(GetRawPtr(h_sum_mat));
         h_sum->SetTerm(0, 1.0, *h_con_orig);
     //            SmartPtr<SymMatrix> DR_mat =
     //            h_sum->SetTerm(1, 1.0,);

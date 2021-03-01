@@ -3,11 +3,11 @@
 //
 
 #include "IpL1IpoptAlg.hpp"
-#include "IpoptConfig.h"
+//#include "IpoptConfig.h"
 #include "IpJournalist.hpp"
 #include "IpRestoPhase.hpp"
 #include "IpOrigIpoptNLP.hpp"
-#include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
+//#include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
 
 
 
@@ -45,11 +45,11 @@ L1IpoptAlg::L1IpoptAlg(
     DBG_ASSERT(IsValid(iter_output_));
     DBG_ASSERT(IsValid(hessian_updater_));
 }
-
+/*
 void L1IpoptAlg::RegisterOptions(SmartPtr<RegisteredOptions> roptions)
 {}
-
-static bool copyright_message_printed = true;
+*/
+//static bool copyright_message_printed = true;
 
 bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
                                 const std::string &prefix)
@@ -62,7 +62,7 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
 
     my_options->SetStringValue("start_with_resto", "no", false);
     my_options->SetStringValue("resto.start_with_resto", "no", false);
-    copyright_message_printed = true;
+    //copyright_message_printed = true;
 
     //options.GetStringValue("linear_solver", linear_solver_, prefix);
 
@@ -106,25 +106,25 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
 
     retvalue = l1exactpenalty_rho_updater_->Initialize(Jnlst(), IpNLP(), IpData(), IpCq(), *my_options, prefix);
 
-    my_options->GetNumericValue("kappa_sigma", kappa_sigma_, prefix);
-    if(!my_options->GetBoolValue("recalc_y", recalc_y_, prefix))
+    my_options->GetNumericValue("kappa_sigma", kappa_sigma_l1_, prefix);
+    if(!my_options->GetBoolValue("recalc_y", recalc_y_l1_, prefix))
     {
         Index enum_init;
         if(my_options->GetEnumValue("hessian_approximation", enum_init, prefix))
         {
-            HessianApproximationType hessian_approximation = HessianApproximationType(enum_init);
+            auto hessian_approximation = HessianApproximationType(enum_init);
             if(hessian_approximation == LIMITED_MEMORY)
             {
-                recalc_y_ = true;
+                recalc_y_l1_ = true;
             }
         }
     }
 
-    if(recalc_y_)
+    if(recalc_y_l1_)
     {
-        my_options->GetNumericValue("recalc_y_feas_tol", recalc_y_feas_tol_, prefix);
+        my_options->GetNumericValue("recalc_y_feas_tol", recalc_y_feas_tol_l1_, prefix);
     }
-
+    /*
     if (prefix == "resto.")
     {
         skip_print_problem_stats_ = true;
@@ -133,6 +133,7 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
     {
         skip_print_problem_stats_ = false;
     }
+     */
 
     return  true;
 }
@@ -495,14 +496,14 @@ void L1IpoptAlg::AcceptTrialPoint()
 
     IpData().AcceptTrialPoint();
 
-    if(recalc_y_){
+    if(recalc_y_l1_){
         if(IpData().curr()->y_c()->Dim() + IpData().curr()->y_d()->Dim() == 0)
         {
-            recalc_y_ = false;
+            recalc_y_l1_ = false;
         }
     }
 
-    if(recalc_y_ && IpCq().curr_constraint_violation() < recalc_y_feas_tol_)
+    if(recalc_y_l1_ && IpCq().curr_constraint_violation() < recalc_y_feas_tol_l1_)
     {
         if(Jnlst().ProduceOutput(J_MOREDETAILED, J_MAIN))
         {
@@ -685,7 +686,7 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
     DBG_START_METH("L1IpoptAlg::correct_bound_multiplier",
                    dbg_verbosity);
 
-    if(kappa_sigma_ < 1. || trial_z.Dim() == 0)
+    if(kappa_sigma_l1_ < 1. || trial_z.Dim() == 0)
     {
         new_trial_z = &trial_z;
         return 0.;
@@ -704,7 +705,7 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
     DBG_PRINT((1, "mu = &8.2e\n", mu));
     DBG_PRINT_VECTOR(2, "trial_z", trial_z);
 
-    if(trial_compl.Amax() <= kappa_sigma_ * mu && trial_compl.Min() >= 1. / kappa_sigma_ * mu)
+    if(trial_compl.Amax() <= kappa_sigma_l1_ * mu && trial_compl.Min() >= 1. / kappa_sigma_l1_ * mu)
     {
         new_trial_z = &trial_z;
         return 0.;
@@ -714,7 +715,7 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
     one_over_s->ElementWiseReciprocal();
 
     SmartPtr<Vector> step_z = trial_z.MakeNew();
-    step_z->AddTwoVectors(kappa_sigma_ * mu, *one_over_s, -1., trial_z, 0.);
+    step_z->AddTwoVectors(kappa_sigma_l1_ * mu, *one_over_s, -1., trial_z, 0.);
 
     DBG_PRINT_VECTOR(2, "step_z", *step_z);
 
@@ -732,7 +733,7 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
         new_trial_z = &trial_z;
     }
 
-    step_z->AddTwoVectors(1./kappa_sigma_ * mu, *one_over_s, -1., *new_trial_z, 0.);
+    step_z->AddTwoVectors(1. / kappa_sigma_l1_ * mu, *one_over_s, -1., *new_trial_z, 0.);
 
     Number max_correction_low = Max(0., step_z->Max());
     if(max_correction_low > 0.)
@@ -747,19 +748,6 @@ Number L1IpoptAlg::correct_bound_multiplier(const Vector &trial_z,
     DBG_PRINT_VECTOR(2, "new_trial_z", *new_trial_z);
 
     return Max(max_correction_up, max_correction_low);
-}
-
-void L1IpoptAlg::print_copyright_message(
-        const Journalist& jnlst
-)
-{
-    jnlst.Printf(J_INSUPPRESSIBLE, J_MAIN,
-                 "\n******************************************************************************\n"
-                 "This program contains Ipopt, a library for large-scale nonlinear optimization.\n"
-                 " Ipopt is released as open source code under the Eclipse Public License (EPL).\n"
-                 "         For more information visit https://github.com/coin-or/Ipopt\n"
-                 "******************************************************************************\n\n");
-    copyright_message_printed = true;
 }
 
 void L1IpoptAlg::ComputeRhoTrial()

@@ -731,16 +731,17 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
             if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
-                SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
-                CompoundVector* C_z_L = static_cast<CompoundVector*>(GetRawPtr(tmpzL));
+                auto C_z_L = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzL));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
-                C_z_L->Scal(1/rho);
-                CompoundVector* C_z_U = static_cast<CompoundVector*>(GetRawPtr(tmpzU));
+                C_z_L->Scal(1./rho);
+                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+
+                SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
+                auto C_z_U = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
-                C_z_U->Scal(1/rho);
-                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+                C_z_U->Scal(1./rho);
                 ip_nlp_l1_->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
             }
             else {
@@ -795,16 +796,17 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
             if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {   // Take care of the (-z_L + z_U)/rho part.
                 SmartPtr<Vector> tmpzL = z_L->MakeNewCopy();
-                SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
-                CompoundVector* C_z_L = static_cast<CompoundVector*>(GetRawPtr(tmpzL));
+                auto C_z_L = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzL));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
-                C_z_L->Scal(1/rho);
-                CompoundVector* C_z_U = static_cast<CompoundVector*>(GetRawPtr(tmpzU));
+                C_z_L->Scal(1./rho);
+                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+
+                SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
+                auto C_z_U = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
-                C_z_U->Scal(1/rho);
-                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+                C_z_U->Scal(1./rho);
                 ip_nlp_l1_->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
             }
             else {
@@ -849,7 +851,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_s()
             ip_nlp_l1_->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
             if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {
-                tmp->Scal(1/rho);
+                tmp->Scal(1./rho);
             }
             tmp->Axpy(-1., *y_d);
             result = ConstPtr(tmp);
