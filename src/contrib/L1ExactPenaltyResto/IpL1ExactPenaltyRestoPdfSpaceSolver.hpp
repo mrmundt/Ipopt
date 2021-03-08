@@ -35,7 +35,7 @@ public:
             ) override;
 
     static void RegisterOptions(
-            SmartPtr<RegisteredOptions> roptions
+            const SmartPtr<RegisteredOptions>& roptions
             );
 
 private:

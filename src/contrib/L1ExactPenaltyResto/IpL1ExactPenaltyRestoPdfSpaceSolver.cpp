@@ -28,7 +28,7 @@ L1ExactPenaltyRestoPDFSpaceSolver::L1ExactPenaltyRestoPDFSpaceSolver(
                    dbg_verbosity);
 }
 
-L1ExactPenaltyRestoPDFSpaceSolver::~L1ExactPenaltyRestoPDFSpaceSolver() noexcept
+L1ExactPenaltyRestoPDFSpaceSolver::~L1ExactPenaltyRestoPDFSpaceSolver()
 {
     DBG_START_METH("L1ExactPenaltyRestoPDFSpaceSolver::~L1ExactPenaltyRestoPDFSpaceSolver",
                    dbg_verbosity);
@@ -36,62 +36,8 @@ L1ExactPenaltyRestoPDFSpaceSolver::~L1ExactPenaltyRestoPDFSpaceSolver() noexcept
 
 
 void L1ExactPenaltyRestoPDFSpaceSolver::RegisterOptions(
-        SmartPtr<RegisteredOptions> roptions)
-{
-    roptions->AddLowerBoundedIntegerOption(
-            "min_refinement_steps",
-            "Minimum number of iterative refinement steps per linear system solve.",
-            0,
-            1,
-            "Iterative refinement (on the full unsymmetric system) is performed for each right hand side. "
-            "This option determines the minimum number of iterative refinements "
-            "(i.e. at least \"min_refinement_steps\" iterative refinement steps are enforced per right hand side.)");
-    roptions->AddLowerBoundedIntegerOption(
-            "max_refinement_steps",
-            "Maximum number of iterative refinement steps per linear system solve.",
-            0,
-            10,
-            "Iterative refinement (on the full unsymmetric system) is performed for each right hand side. "
-            "This option determines the maximum number of iterative refinement steps.");
-    roptions->AddLowerBoundedNumberOption(
-            "residual_ratio_max",
-            "Iterative refinement tolerance",
-            0., true,
-            1e-10,
-            "Iterative refinement is performed until the residual test ratio is less than this tolerance "
-            "(or until \"max_refinement_steps\" refinement steps are performed).");
-    roptions->AddLowerBoundedNumberOption(
-            "residual_ratio_singular",
-            "Threshold for declaring linear system singular after failed iterative refinement.",
-            0., true,
-            1e-5,
-            "If the residual test ratio is larger than this value after failed iterative refinement, "
-            "the algorithm pretends that the linear system is singular.");
-    // ToDo Think about following option - are the correct norms used?
-    roptions->AddLowerBoundedNumberOption(
-            "residual_improvement_factor",
-            "Minimal required reduction of residual test ratio in iterative refinement.",
-            0., true,
-            0.999999999,
-            "If the improvement of the residual test ratio made by one iterative refinement step is not better than this factor, "
-            "iterative refinement is aborted.");
-    roptions->AddLowerBoundedNumberOption(
-            "neg_curv_test_tol",
-            "Tolerance for heuristic to ignore wrong inertia.",
-            0.0, false,
-            0.0,
-            "If nonzero, incorrect inertia in the augmented system is ignored, and "
-            "Ipopt tests if the direction is a direction of positive curvature. "
-            "This tolerance is alpha_n in the paper by Zavala and Chiang (2014) and "
-            "it determines when the direction is considered to be sufficiently positive. "
-            "A value in the range of [1e-12, 1e-11] is recommended.");
-    roptions->AddStringOption2(
-            "neg_curv_test_reg",
-            "Whether to do the curvature test with the primal regularization (see Zavala and Chiang, 2014).",
-            "yes",
-            "yes", "use primal regularization with the inertia-free curvature test",
-            "no",  "use original IPOPT approach, in which the primal regularization is ignored");
-}
+        const SmartPtr<RegisteredOptions>& roptions)
+{ }
 
 
 bool L1ExactPenaltyRestoPDFSpaceSolver::InitializeImpl(
@@ -184,6 +130,25 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
     SmartPtr<const Vector> sigma_s = IpCq().curr_sigma_s();
     DBG_PRINT_VECTOR(2, "Sigma_x", *sigma_x);
     DBG_PRINT_VECTOR(2, "Sigma_s", *sigma_s);
+    Number rho = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData())->GetCurrentRho();
+    bool rho_inv_obj = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
+    SmartPtr<Vector> l1_sigma_x, l1_sigma_s, v_tmp;
+    l1_sigma_x = sigma_x->MakeNew();
+    l1_sigma_x->Copy(*sigma_x);
+    l1_sigma_s = sigma_s->MakeNew();
+    l1_sigma_s->Copy(*sigma_s);
+
+    SmartPtr<CompoundVector> c_tmp;
+
+    if (rho_inv_obj){
+        c_tmp = dynamic_cast<CompoundVector*>(GetRawPtr(l1_sigma_x));
+        v_tmp = c_tmp->GetCompNonConst(0);
+        v_tmp->Scal(1/rho);
+
+        c_tmp = dynamic_cast<CompoundVector*>(GetRawPtr(l1_sigma_s));
+        v_tmp = c_tmp->GetCompNonConst(0);
+        v_tmp->Scal(1/rho);
+    }
 
     bool done = false;
     // The following flag is set to true, if we asked the linear
@@ -208,7 +173,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
         if( !improve_solution )
         {
             solve_retval = SolveOnce(resolve_with_better_quality, pretend_singular, *W, *J_c, *J_d, *Px_L, *Px_U, *Pd_L,
-                                     *Pd_U, *z_L, *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U, *slack_s_L, *slack_s_U, *sigma_x, *sigma_s, 1., 0.,
+                                     *Pd_U, *z_L, *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U, *slack_s_L, *slack_s_U, *l1_sigma_x, *l1_sigma_s, 1., 0.,
                                      rhs, res);
             resolve_with_better_quality = false;
             pretend_singular = false;
@@ -230,7 +195,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
             {
                 SmartPtr<IteratesVector> resid = res.MakeNewIteratesVector(true);
                 ComputeResiduals(*W, *J_c, *J_d, *Px_L, *Px_U, *Pd_L, *Pd_U, *z_L, *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U,
-                                 *slack_s_L, *slack_s_U, *sigma_x, *sigma_s, alpha, beta, rhs, res, *resid);
+                                 *slack_s_L, *slack_s_U, *l1_sigma_x, *l1_sigma_s, alpha, beta, rhs, res, *resid);
             }
             break;
         }
@@ -240,7 +205,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
 
         // ToDo don't to that after max refinement?
         ComputeResiduals(*W, *J_c, *J_d, *Px_L, *Px_U, *Pd_L, *Pd_U, *z_L, *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U,
-                         *slack_s_L, *slack_s_U, *sigma_x, *sigma_s, alpha, beta, rhs, res, *resid);
+                         *slack_s_L, *slack_s_U, *l1_sigma_x, *l1_sigma_s, alpha, beta, rhs, res, *resid);
 
         Number residual_ratio = ComputeResidualRatio(rhs, res, *resid);
         Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
@@ -256,11 +221,11 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
 
             // To the next back solve
             solve_retval = SolveOnce(resolve_with_better_quality, false, *W, *J_c, *J_d, *Px_L, *Px_U, *Pd_L, *Pd_U, *z_L,
-                                     *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U, *slack_s_L, *slack_s_U, *sigma_x, *sigma_s, -1., 1., *resid, res);
+                                     *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U, *slack_s_L, *slack_s_U, *l1_sigma_x, *l1_sigma_s, -1., 1., *resid, res);
             ASSERT_EXCEPTION(solve_retval, INTERNAL_ABORT, "SolveOnce returns false during iterative refinement.");
 
             ComputeResiduals(*W, *J_c, *J_d, *Px_L, *Px_U, *Pd_L, *Pd_U, *z_L, *z_U, *v_L, *v_U, *slack_x_L, *slack_x_U,
-                             *slack_s_L, *slack_s_U, *sigma_x, *sigma_s, alpha, beta, rhs, res, *resid);
+                             *slack_s_L, *slack_s_U, *l1_sigma_x, *l1_sigma_s, alpha, beta, rhs, res, *resid);
 
             residual_ratio = ComputeResidualRatio(rhs, res, *resid);
             Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
@@ -407,20 +372,24 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     DBG_START_METH("PDFullSpaceSolver::SolveOnce", dbg_verbosity);
     SmartPtr<Vector> tmp;
     Number s_fact = 1.;
-    Number rho = static_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData())->GetCurrentRho();
-    bool rho_inv_obj = static_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
+    Number rho = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData())->GetCurrentRho();
+    bool rho_inv_obj = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
 
     IpData().TimingStats().PDSystemSolverSolveOnce().Start();
 
     // Compute the right hand side for the augmented system formulation
 
-    // @Davs: I think this is already scaled (for 1/rho)
-    // here is why (example only rhs_z_L): rhs_z_L = (slack_x_L * z_L - mu * e)/rho
+    // @Davs: I think some of this is already scaled (for 1/rho)
+    // here is why (example only rhs_z_L):
+    // rhs_z_L = (slack_x_L * z_L - mu * e)/rho
     // slack_x_L^-1 * rhs_z_L  = (z_L - slack_z_L^-1 * mu) /rho = new_rhs_z_L
-    // thus (grad_f - z_L)/rho + J_cT * y_c + (new_rhs_z_L) =
-    // (grad_f - slack_z_L^-1 * mu)/rho + J_cT * y_c . Which is what I want.
+    // thus :
+    // (grad_f - z_L)/rho + J_cT * y_c + (new_rhs_z_L) =
+    // (grad_f - slack_z_L^-1 * mu)/rho + J_cT * y_c .
+    // Which is what I want.
     // Note that the quantity (grad_f - z_L)/rho + J_cT * y_c is curr_grad_lag_with_damping_x(), which has been
     // Modified for the l1 case.
+    // Thus, we only need to scale the rhs.z by 1/rho if necessary.
     SmartPtr<Vector> augRhs_x = rhs.x()->MakeNewCopy();
     if (rho_inv_obj)
     {
@@ -439,8 +408,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
         tmp_x->Scal(1./rho);
         Px_U.AddMSinvZ(-1.0, slack_x_U, *tmp, *augRhs_x);
     } else{
-        Px_L.AddMSinvZ(1.0, slack_x_L, *rhs.z_L(),
-                       *augRhs_x);
+        Px_L.AddMSinvZ(1.0, slack_x_L, *rhs.z_L(),*augRhs_x);
         Px_U.AddMSinvZ(-1.0, slack_x_U, *rhs.z_U(), *augRhs_x);
     }
 
@@ -669,7 +637,7 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
                     }
                 }
             }
-        } // while (retval!=SYMSOLVER_SUCCESS && !fail) {
+        }
 
         // Some output
         Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
@@ -735,8 +703,8 @@ void L1ExactPenaltyRestoPDFSpaceSolver::ComputeResiduals(const SymMatrix &W,
 
     SmartPtr<Vector> tmp;
     Number s_fact = 1.;
-    Number rho = static_cast<L1ExactPenaltyRestoData*>(&(IpData().AdditionalData()))->GetCurrentRho();
-    bool rho_inv_obj = static_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
+    Number rho = dynamic_cast<L1ExactPenaltyRestoData*>(&(IpData().AdditionalData()))->GetCurrentRho();
+    bool rho_inv_obj = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(&IpNLP())->l1_epr_inv_objective_type();
 
 
     // x

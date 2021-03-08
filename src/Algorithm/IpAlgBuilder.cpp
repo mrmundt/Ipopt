@@ -232,7 +232,7 @@ void AlgorithmBuilder::RegisterOptions(
       "no", "use direct solver",
       "yes", "use iterative solver",
       "EXPERIMENTAL!");
-    roptions->SetRegisteringCategory("l1 Exact Penalty");
+    //roptions->SetRegisteringCategory("l1 Exact Penalty");
     roptions->AddStringOption2(
             "restoration_method",
             "Strategy for the restoration phase.",

@@ -14,6 +14,8 @@ IpL1ExactPenaltyRestoIpoptNlp.cpp \
 IpL1ExactPenaltyRestoPdfSpaceSolver.cpp \
 IpL1ExactPenaltyRestoRegOp.cpp \
 IpL1ExactPenaltyRhoUpdater.cpp \
+IpL1ExactPenaltyLeastSquareMults.cpp \
+IpL1ExactPenaltyOutput.cpp \
 IpL1IpoptAlg.cpp \
 IpRestoL1ExactPenalty.cpp
 
