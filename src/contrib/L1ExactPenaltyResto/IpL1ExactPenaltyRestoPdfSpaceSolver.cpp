@@ -24,6 +24,7 @@ L1ExactPenaltyRestoPDFSpaceSolver::L1ExactPenaltyRestoPDFSpaceSolver(
         perturbHandler_(&perturbHandler),
         dummy_cache_(1)
 {
+    // This is almost the same as the OriginalPDFSolver
     DBG_START_METH("L1ExactPenaltyRestoPDFSpaceSolver::L1ExactPenaltyRestoPDFSpaceSolver",
                    dbg_verbosity);
 }
@@ -101,7 +102,6 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::Solve(Number alpha,
     DBG_PRINT_VECTOR(2, "res_vL in", *res.v_L());
     DBG_PRINT_VECTOR(2, "res_vU in", *res.v_U());
 
-    // if beta is nonzero, keep a copy of the incoming values in res_ */
     SmartPtr<IteratesVector> copy_res;
     if( beta != 0. )
     {

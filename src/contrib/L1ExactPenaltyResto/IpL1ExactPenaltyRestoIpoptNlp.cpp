@@ -21,8 +21,7 @@ L1ExactPenaltyRestoIpoptNLP::L1ExactPenaltyRestoIpoptNLP(
 
 }
 
-L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() noexcept
-{ }
+L1ExactPenaltyRestoIpoptNLP::~L1ExactPenaltyRestoIpoptNLP() = default;
 
 void L1ExactPenaltyRestoIpoptNLP::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions
@@ -79,7 +78,7 @@ Number L1ExactPenaltyRestoIpoptNLP::f(
         fact_c = rho;
     }
     // Turn x into a compound
-    const CompoundVector* c_vec = static_cast<const CompoundVector*>(&x);
+    auto* c_vec = dynamic_cast<const CompoundVector*>(&x);
     // Get x from the compound
     SmartPtr<const Vector> x_only = c_vec->GetComp(0);
     // Get the sumation of penalty variables times factor_c.
@@ -175,7 +174,7 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::uninitialized_h()
 {
     SmartPtr<CompoundSymMatrix> retPtr;
     const CompoundSymMatrixSpace* h_comp_space =
-            static_cast<const CompoundSymMatrixSpace*>(GetRawPtr(RestoIpoptNLP::HessianMatrixSpace()));
+            dynamic_cast<const CompoundSymMatrixSpace*>(GetRawPtr(RestoIpoptNLP::HessianMatrixSpace()));
 
     if( hessian_approximation_l1_ == LIMITED_MEMORY )
     {
@@ -183,20 +182,22 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoIpoptNLP::uninitialized_h()
     }
     else
     {
+
+
         SmartPtr<const SymMatrix> h_con_orig = RestoIpoptNLP::OrigIpNLP().uninitialized_h();
         retPtr = h_comp_space->MakeNewCompoundSymMatrix();
         SmartPtr<Matrix> h_sum_mat = retPtr->GetCompNonConst(0, 0);
         SmartPtr<SumSymMatrix> h_sum = dynamic_cast<SumSymMatrix*>(GetRawPtr(h_sum_mat));
         h_sum->SetTerm(0, 1.0, *h_con_orig);
     //            SmartPtr<SymMatrix> DR_mat =
-    //            h_sum->SetTerm(1, 1.0,);
+        h_sum->SetTerm(1, 1.0, *getL1DiagMatDummy());
     }
     return GetRawPtr(retPtr);
 }
 
 Number L1ExactPenaltyRestoIpoptNLP::Rho() const
 {
-    L1ExactPenaltyRestoData* l1_epr_data = dynamic_cast<L1ExactPenaltyRestoData*>(&l1_ip_data_->AdditionalData());
+    auto l1_epr_data = dynamic_cast<L1ExactPenaltyRestoData*>(&l1_ip_data_->AdditionalData());
     Number rho0 = l1_epr_data->GetCurrentRho();
     if (l1_epr_inv_objective_type() == OBJECTIVE_INV)
     {

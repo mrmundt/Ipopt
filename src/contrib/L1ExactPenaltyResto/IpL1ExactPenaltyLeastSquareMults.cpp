@@ -53,6 +53,7 @@ bool L1ExactPenaltyLeastSquareMults::CalculateMultipliers(Ipopt::Vector &y_c, Ip
         SmartPtr<Vector> zX_only;
         CompoundVector* zD_Compound;
         rho = l1EprAddData_->GetCurrentRho();
+        //Jnlst().Printf(J_INSUPPRESSIBLE, J_MAIN, "current_rho %9.6f\n", rho);
         //
         zDummy = z_L->MakeNew();
         zDummy->Copy(*z_L);
@@ -75,7 +76,7 @@ bool L1ExactPenaltyLeastSquareMults::CalculateMultipliers(Ipopt::Vector &y_c, Ip
 
     // Scale the d multipliers, if necessary.
     s_factor = is_rho_inv_obj_ ? 1./(l1EprAddData_->GetCurrentRho()) : 1.;
-
+    //Jnlst().Printf(J_INSUPPRESSIBLE, J_MAIN, "sfactor %9.6f\n", s_factor);
     SmartPtr<Vector> rhs_s = IpData().curr()->s()->MakeNew();
     Pd_L->MultVector(s_factor, *v_L, 0, *rhs_s);
     Pd_U->MultVector(-s_factor, *v_U, 1., *rhs_s);

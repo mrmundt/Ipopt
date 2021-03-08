@@ -119,7 +119,6 @@ bool L1IpoptAlg::InitializeImpl(const OptionsList &options,
             }
         }
     }
-
     if(recalc_y_l1_)
     {
         my_options->GetNumericValue("recalc_y_feas_tol", recalc_y_feas_tol_l1_, prefix);
