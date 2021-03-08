@@ -86,15 +86,13 @@ public:
     // curr_compl_x_U stays out
 
 
-private:
     /**@name Default Compiler Generated Methods
      *
      */
-    L1ExactPenaltyRestoCQ();
-
-    L1ExactPenaltyRestoCQ(const L1ExactPenaltyRestoCQ&);
-
-    void operator=(const L1ExactPenaltyRestoCQ&);
+    L1ExactPenaltyRestoCQ() = delete;
+    L1ExactPenaltyRestoCQ(const L1ExactPenaltyRestoCQ&) = delete;
+    void operator=(const L1ExactPenaltyRestoCQ&) = delete;
+private:
 
     SmartPtr<IpoptData> ip_data_l1_;
     SmartPtr<IpoptNLP> ip_nlp_l1_;
@@ -102,14 +100,14 @@ private:
 
     L1ExactPenaltyRestoData& L1EPRestoData()
     {
-        L1ExactPenaltyRestoData* l1epresto_data = static_cast<L1ExactPenaltyRestoData*>(&(ip_data_l1_->AdditionalData()));
+        auto l1epresto_data = dynamic_cast<L1ExactPenaltyRestoData*>(&(ip_data_l1_->AdditionalData()));
         DBG_ASSERT(dynamic_cast<L1ExactPenaltyRestoData*>(&(ip_data_l1->AdditionalData())));
         return *l1epresto_data;
     }
 
-    SmartPtr<const L1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
+    SmartPtr<L1ExactPenaltyRestoIpoptNLP> L1EPRestoNlp()
     {
-        SmartPtr<const L1ExactPenaltyRestoIpoptNLP> l1epr_nlp = static_cast<const L1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_));
+        SmartPtr<L1ExactPenaltyRestoIpoptNLP> l1epr_nlp = dynamic_cast<L1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_));
         DBG_ASSERT(dynamic_cast<const IpL1ExactPenaltyRestoIpoptNLP*>(GetRawPtr(ip_nlp_l1_)));
         return l1epr_nlp;
     }
@@ -185,6 +183,7 @@ private:
 
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_x_cache_l1_;
     CachedResults<SmartPtr<const Vector> > curr_grad_lag_with_damping_s_cache_l1_;
+    SmartPtr<const Journalist> jnlst_;
 
 };
 }

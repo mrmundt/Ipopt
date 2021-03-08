@@ -4,7 +4,6 @@
 
 #include "IpL1ExactPenaltyRestoCalculatedQuantities.hpp"
 
-#include <cmath>
 #include <limits>
 
 
@@ -35,10 +34,10 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
         curr_grad_barrier_obj_s_cache_l1_(1),
         grad_kappa_times_damping_x_cache_l1_(1),
         grad_kappa_times_damping_s_cache_l1_(1),
-        dampind_x_L_l1_(NULL),
-        dampind_x_U_l1_(NULL),
-        dampind_s_L_l1_(NULL),
-        dampind_s_U_l1_(NULL),
+        dampind_x_L_l1_(nullptr),
+        dampind_x_U_l1_(nullptr),
+        dampind_s_L_l1_(nullptr),
+        dampind_s_U_l1_(nullptr),
         curr_exact_hessian_cache_l1_(1)   ,
         curr_grad_lag_x_cache_l1_(1),
         trial_grad_lag_x_cache_l1_(1),
@@ -51,7 +50,7 @@ L1ExactPenaltyRestoCQ::L1ExactPenaltyRestoCQ(
                    dbg_verbosity);
     DBG_ASSERT(IsValid(ip_nlp_) && IsValid(ip_data_));
 }
-L1ExactPenaltyRestoCQ::~L1ExactPenaltyRestoCQ() noexcept
+L1ExactPenaltyRestoCQ::~L1ExactPenaltyRestoCQ()
 = default;
 
 bool L1ExactPenaltyRestoCQ::Initialize(
@@ -70,22 +69,22 @@ bool L1ExactPenaltyRestoCQ::Initialize(
     // The following option is registered by OrigIpoptNLP
     options.GetBoolValue("warm_start_same_structure", warm_start_same_structure_l1_, prefix);
     //options.GetNumericValue("mu_target", mu_target_, prefix);
-
+    jnlst_ = &jnlst;
     if( !warm_start_same_structure_l1_ )
     {
-        dampind_x_L_l1_ = NULL;
-        dampind_x_U_l1_ = NULL;
-        dampind_s_L_l1_ = NULL;
-        dampind_s_U_l1_ = NULL;
+        dampind_x_L_l1_ = nullptr;
+        dampind_x_U_l1_ = nullptr;
+        dampind_s_L_l1_ = nullptr;
+        dampind_s_U_l1_ = nullptr;
 
-        tmp_x_l1_ = NULL;
-        tmp_s_l1_ = NULL;
-        //tmp_c_l1_ = NULL;
-        //tmp_d_l1_ = NULL;
-        tmp_x_L_l1_ = NULL;
-        tmp_x_U_l1_ = NULL;
-        tmp_s_L_l1_ = NULL;
-        tmp_s_U_l1_ = NULL;
+        tmp_x_l1_ = nullptr;
+        tmp_s_l1_ = nullptr;
+        //tmp_c_l1_ = nullptr;
+        //tmp_d_l1_ = nullptr;
+        tmp_x_L_l1_ = nullptr;
+        tmp_x_U_l1_ = nullptr;
+        tmp_s_L_l1_ = nullptr;
+        tmp_s_U_l1_ = nullptr;
     }
 
 
@@ -117,11 +116,10 @@ Number L1ExactPenaltyRestoCQ::curr_f()
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
     Number rho = L1EPRestoData().GetCurrentRho();
     sdeps[0] = rho;
-
     if(!curr_f_cache_l1_.GetCachedResult(result, tdeps, sdeps)){
         if(!trial_f_cache_l1_.GetCachedResult(result, tdeps, sdeps)){
             DBG_PRINT((2, "evaluate current_f\n"));
-            result = ip_nlp_l1_->f(*x, rho);
+            result = L1EPRestoNlp()->f(*x, rho);
             curr_f_cache_l1_.AddCachedResult(result, tdeps, sdeps);
         }
     }
@@ -138,7 +136,6 @@ Number L1ExactPenaltyRestoCQ::trial_f()
 
     L1ExactPenaltyRestoData& l1data = L1EPRestoData();
     Number rho = l1data.GetCurrentRho();
-
     DBG_PRINT_VECTOR(2, "trial_x", *x);
     DBG_PRINT((1, "trial_x tag = %u\n", x-GetTag()));
 
@@ -150,7 +147,7 @@ Number L1ExactPenaltyRestoCQ::trial_f()
     if( !trial_f_cache_l1_.GetCachedResult(result, tdeps, sdeps)){
         if( !curr_f_cache_l1_.GetCachedResult(result, tdeps, sdeps)){
             DBG_PRINT((2, "evaluate trial_f\n"));
-            result = ip_nlp_l1_->f(*x, rho);
+            result = L1EPRestoNlp()->f(*x, rho);
             trial_f_cache_l1_.AddCachedResult(result, tdeps, sdeps);
         }
     }
@@ -176,7 +173,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_f()
     {
         if( !trial_grad_f_cache_l1_.GetCachedResult(result, tdeps, sdeps))
         {
-            result = ip_nlp_l1_->grad_f(*x, rho);
+            result = L1EPRestoNlp()->grad_f(*x, rho);
         }
         curr_grad_f_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
@@ -201,7 +198,7 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_f()
     {
         if( !curr_grad_f_cache_l1_.GetCachedResult(result, tdeps, sdeps))
         {
-            result = ip_nlp_l1_->grad_f(*x, rho);
+            result = L1EPRestoNlp()->grad_f(*x, rho);
         }
     }
     return result;
@@ -230,14 +227,13 @@ Number L1ExactPenaltyRestoCQ::CalcBarrierTermL1(
     {
         scale_fact = 1./ L1EPRestoData().GetCurrentRho();
     }
-
     Number retval = 0.;
     Number retval2 = 0.;
 
-    const CompoundVector* comp_slack_x_L = static_cast<const CompoundVector*>(&slack_x_L);
+    auto comp_slack_x_L = dynamic_cast<const CompoundVector*>(&slack_x_L);
     SmartPtr<const Vector> sl_x_only_x_L = comp_slack_x_L->GetComp(0);
 
-    const CompoundVector* comp_slack_x_U = static_cast<const CompoundVector*>(&slack_x_U);
+    auto comp_slack_x_U = dynamic_cast<const CompoundVector*>(&slack_x_U);
     SmartPtr<const Vector> sl_x_only_x_U = comp_slack_x_U->GetComp(0);
 
     retval += slack_x_L.SumLogs() - sl_x_only_x_L->SumLogs();
@@ -382,14 +378,14 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_x()
         tmp2->Set(0.0);
 
         Tmp_x_L_l1().Set(1.0);
-        ip_nlp_l1_->Px_L()->AddMSinvZ(-mu, *curr_slack_x_L(), Tmp_x_L_l1(), *tmp2);
+        L1EPRestoNlp()->Px_L()->AddMSinvZ(-mu, *curr_slack_x_L(), Tmp_x_L_l1(), *tmp2);
 
         Tmp_x_U_l1().Set(1.0);
-        ip_nlp_l1_->Px_U()->AddMSinvZ(mu, *curr_slack_x_U(), Tmp_x_U_l1(), *tmp2);
+        L1EPRestoNlp()->Px_U()->AddMSinvZ(mu, *curr_slack_x_U(), Tmp_x_U_l1(), *tmp2);
 
         if(L1EPRestoNlp()->l1_epr_inv_objective_type())
-        {
-            CompoundVector* Ctmp2 = static_cast<CompoundVector*>(GetRawPtr(tmp2));
+        { // only do it once.
+            auto Ctmp2 = dynamic_cast<CompoundVector*>(GetRawPtr(tmp2));
             SmartPtr<Vector> Ctmp2_xonly = Ctmp2->GetCompNonConst(0);
             Ctmp2_xonly->Scal(1/rho);
         }
@@ -406,8 +402,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_x()
 
             DBG_PRINT((1, "kappa_d*mu = %e\n", kappa_d_l1_ * mu));
             DBG_PRINT_VECTOR(2, "dampind_x_L", *dampind_x_L);
-            ip_nlp_l1_->Px_L()->MultVector(kappa_d_l1_ * mu, *dampind_x_L, 1., *tmp1);
-            ip_nlp_l1_->Px_U()->MultVector(-kappa_d_l1_ * mu, *dampind_x_U, 1., *tmp1);
+            L1EPRestoNlp()->Px_L()->MultVector(kappa_d_l1_ * mu, *dampind_x_L, 1., *tmp1);
+            L1EPRestoNlp()->Px_U()->MultVector(-kappa_d_l1_ * mu, *dampind_x_U, 1., *tmp1);
         }
 
         DBG_PRINT_VECTOR(2, "Barrier_Grad_x with damping", *tmp1);
@@ -447,10 +443,10 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
 
         Tmp_s_L_l1().Set(-mu);
         Tmp_s_L_l1().ElementWiseDivide(*curr_slack_s_L());
-        ip_nlp_l1_->Pd_L()->MultVector(1., Tmp_s_L_l1(), 0., *tmp1);
+        L1EPRestoNlp()->Pd_L()->MultVector(1., Tmp_s_L_l1(), 0., *tmp1);
 
         Tmp_s_U_l1().Set(1.);
-        ip_nlp_l1_->Pd_U()->AddMSinvZ(mu, *curr_slack_s_U(), Tmp_s_U_l1(), *tmp1);
+        L1EPRestoNlp()->Pd_U()->AddMSinvZ(mu, *curr_slack_s_U(), Tmp_s_U_l1(), *tmp1);
 
         // rho part.
         if(L1EPRestoNlp()->l1_epr_inv_objective_type())
@@ -472,8 +468,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_barrier_obj_s()
             DBG_PRINT((1, "kappa_d*mu = %e\n", kappa_d_l1_ * mu));
             DBG_PRINT_VECTOR(2, "dampind_s_L", *dampind_s_L);
             DBG_PRINT_VECTOR(2, "dampind_s_U", *dampind_s_U);
-            ip_nlp_l1_->Pd_L()->MultVector(kappa_d_l1_ * mu, *dampind_s_L, 1., *tmp1);
-            ip_nlp_l1_->Pd_U()->MultVector(-kappa_d_l1_ * mu, *dampind_s_U, 1., *tmp1);
+            L1EPRestoNlp()->Pd_L()->MultVector(kappa_d_l1_ * mu, *dampind_s_L, 1., *tmp1);
+            L1EPRestoNlp()->Pd_U()->MultVector(-kappa_d_l1_ * mu, *dampind_s_U, 1., *tmp1);
         }
 
         DBG_PRINT_VECTOR(2, "Barrier_Grad_s with damping", *tmp1);
@@ -494,8 +490,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()
     SmartPtr<const Vector> x = ip_data_l1_->curr()->x();
 
     std::vector<const TaggedObject*> tdeps(2);
-    tdeps[0] = GetRawPtr(ip_nlp_l1_->Px_L());
-    tdeps[1] = GetRawPtr(ip_nlp_l1_->Px_U());
+    tdeps[0] = GetRawPtr(L1EPRestoNlp()->Px_L());
+    tdeps[1] = GetRawPtr(L1EPRestoNlp()->Px_U());
     std::vector<Number> sdeps(1);
     sdeps[0] = L1EPRestoData().GetCurrentRho();
     if( !grad_kappa_times_damping_x_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
@@ -509,8 +505,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_x()
             SmartPtr<const Vector> dampind_s_U;
             ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
 
-            ip_nlp_l1_->Px_L()->MultVector(kappa_d_l1_, *dampind_x_L, 0., *tmp1);
-            ip_nlp_l1_->Px_U()->MultVector(-kappa_d_l1_, *dampind_x_U, 1., *tmp1);
+            L1EPRestoNlp()->Px_L()->MultVector(kappa_d_l1_, *dampind_x_L, 0., *tmp1);
+            L1EPRestoNlp()->Px_U()->MultVector(-kappa_d_l1_, *dampind_x_U, 1., *tmp1);
         }
         else
         {
@@ -533,8 +529,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_s()
     SmartPtr<const Vector> s = ip_data_l1_->curr()->s();
 
     std::vector<const TaggedObject*> tdeps(2);
-    tdeps[0] = GetRawPtr(ip_nlp_l1_->Pd_L());
-    tdeps[1] = GetRawPtr(ip_nlp_l1_->Pd_U());
+    tdeps[0] = GetRawPtr(L1EPRestoNlp()->Pd_L());
+    tdeps[1] = GetRawPtr(L1EPRestoNlp()->Pd_U());
     std::vector<Number> sdeps(1);
     sdeps[0] = L1EPRestoData().GetCurrentRho();
     if( !grad_kappa_times_damping_s_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
@@ -548,8 +544,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::grad_kappa_times_damping_s()
             SmartPtr<const Vector> dampind_s_U;
             ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
 
-            ip_nlp_l1_->Pd_L()->MultVector(kappa_d_l1_, *dampind_s_L, 0., *tmp1);
-            ip_nlp_l1_->Pd_U()->MultVector(-kappa_d_l1_, *dampind_s_U, 1., *tmp1);
+            L1EPRestoNlp()->Pd_L()->MultVector(kappa_d_l1_, *dampind_s_L, 0., *tmp1);
+            L1EPRestoNlp()->Pd_U()->MultVector(-kappa_d_l1_, *dampind_s_U, 1., *tmp1);
         }
         else
         {
@@ -572,19 +568,19 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
     DBG_START_METH("L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1",
                    dbg_verbosity);
 
-    Number scale = 1.0;
+    Number scale = 1.;
     SmartPtr<const Vector> result;
-
     if(L1EPRestoNlp()->l1_epr_inv_objective_type())
     {
-        scale = 1./ L1ExactPenaltyRestoData().GetCurrentRho();
+
+        scale = 1./ L1EPRestoData().GetCurrentRho();
         DBG_PRINT((2, "Inverse scaling! \n"));
     }
     std::vector<const TaggedObject*> tdeps(1);
-    tdeps[0] = NULL ;
+    tdeps[0] = nullptr ;
 
     std::vector<Number> sdeps(1);
-    sdeps[0] = L1ExactPenaltyRestoData().GetCurrentRho();
+    sdeps[0] = L1EPRestoData().GetCurrentRho();
     dampind_s_U_cache_l1_.GetCachedResult(result, tdeps, sdeps);
 
     DBG_PRINT((2, "scale_damping_l1_ = %e\n", scale));
@@ -592,30 +588,30 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
     //if( IsNull(dampind_x_L_l1_))
     if(!dampind_x_L_cache_l1_.GetCachedResult(dampind_x_L, tdeps, sdeps)) {
         Tmp_x_L_l1().Set(1.0);
-        ip_nlp_l1_->Px_L()->MultVector(1.0, Tmp_x_L_l1(), 0.0, Tmp_x_l1());
+        L1EPRestoNlp()->Px_L()->MultVector(1.0, Tmp_x_L_l1(), 0.0, Tmp_x_l1());
         Tmp_x_U_l1().Set(1.0);
-        ip_nlp_l1_->Px_U()->MultVector(-1.0, Tmp_x_U_l1(), 1.0, Tmp_x_l1());
+        L1EPRestoNlp()->Px_U()->MultVector(-1.0, Tmp_x_U_l1(), 1.0, Tmp_x_l1());
 
-        dampind_x_L_l1_ = ip_nlp_l1_->x_L()->MakeNew();
-        ip_nlp_l1_->Px_L()->TransMultVector(1.0, Tmp_x_l1(), 0.0,
+        dampind_x_L_l1_ = L1EPRestoNlp()->x_L()->MakeNew();
+        L1EPRestoNlp()->Px_L()->TransMultVector(1.0, Tmp_x_l1(), 0.0,
                                             *dampind_x_L_l1_);
 
-        dampind_x_U_l1_ = ip_nlp_l1_->x_U()->MakeNew();
-        ip_nlp_l1_->Px_U()->TransMultVector(-1.0, Tmp_x_l1(), 0.0,
+        dampind_x_U_l1_ = L1EPRestoNlp()->x_U()->MakeNew();
+        L1EPRestoNlp()->Px_U()->TransMultVector(-1.0, Tmp_x_l1(), 0.0,
                                             *dampind_x_U_l1_);
 
         // Now for s
         Tmp_s_L_l1().Set(1.0);
-        ip_nlp_l1_->Pd_L()->MultVector(1.0, Tmp_s_L_l1(), 0.0, Tmp_s_l1());
+        L1EPRestoNlp()->Pd_L()->MultVector(1.0, Tmp_s_L_l1(), 0.0, Tmp_s_l1());
         Tmp_s_U_l1().Set(1.0);
-        ip_nlp_l1_->Pd_U()->MultVector(-1.0, Tmp_s_U_l1(), 1.0, Tmp_s_l1());
+        L1EPRestoNlp()->Pd_U()->MultVector(-1.0, Tmp_s_U_l1(), 1.0, Tmp_s_l1());
 
-        dampind_s_L_l1_ = ip_nlp_l1_->d_L()->MakeNew();
-        ip_nlp_l1_->Pd_L()->TransMultVector(1.0, Tmp_s_l1(), 0.0,
+        dampind_s_L_l1_ = L1EPRestoNlp()->d_L()->MakeNew();
+        L1EPRestoNlp()->Pd_L()->TransMultVector(1.0, Tmp_s_l1(), 0.0,
                                             *dampind_s_L_l1_);
 
-        dampind_s_U_l1_ = ip_nlp_l1_->d_U()->MakeNew();
-        ip_nlp_l1_->Pd_U()->TransMultVector(-1.0, Tmp_s_l1(), 0.0,
+        dampind_s_U_l1_ = L1EPRestoNlp()->d_U()->MakeNew();
+        L1EPRestoNlp()->Pd_U()->TransMultVector(-1.0, Tmp_s_l1(), 0.0,
                                             *dampind_s_U_l1_);
 
         DBG_PRINT_VECTOR(2, "dampind_x_L_l1_", *dampind_x_L_l1_);
@@ -624,11 +620,11 @@ void L1ExactPenaltyRestoCQ::ComputeDampingIndicatorsL1(
         DBG_PRINT_VECTOR(2, "dampind_s_U_l1_", *dampind_s_U_l1_);
 
         // Scale the relevant parts if necessary.
-        CompoundVector *C_dampind_x_L_ = static_cast<CompoundVector *>(GetRawPtr(
+        auto C_dampind_x_L_ = dynamic_cast<CompoundVector *>(GetRawPtr(
                 dampind_x_L_l1_));
         SmartPtr <Vector> tmp_xonly_x_L_ = C_dampind_x_L_->GetCompNonConst(0);
 
-        CompoundVector *C_dampind_x_U_ = static_cast<CompoundVector *>(GetRawPtr(
+        auto C_dampind_x_U_ = dynamic_cast<CompoundVector *>(GetRawPtr(
                 dampind_x_U_l1_));
         SmartPtr <Vector> tmp_xonly_x_U_ = C_dampind_x_U_->GetCompNonConst(0);
 
@@ -686,7 +682,7 @@ SmartPtr<const SymMatrix> L1ExactPenaltyRestoCQ::curr_exact_hessian()
 
     if( !curr_exact_hessian_cache_l1_.GetCachedResult(result, tdeps, sdeps) )
     {
-        result = ip_nlp_l1_->h(*x, 1.0, *y_c, *y_d, rho);
+        result = L1EPRestoNlp()->h(*x, 1.0, *y_c, *y_d, rho);
         curr_exact_hessian_cache_l1_.AddCachedResult(result, tdeps, sdeps);
     }
 
@@ -706,7 +702,6 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
     SmartPtr<const Vector> z_U = ip_data_l1_->curr()->z_U();
 
     Number rho = L1EPRestoData().GetCurrentRho();
-
     std::vector<const TaggedObject*> tdeps(5);
     tdeps[0] = GetRawPtr(x);
     tdeps[1] = GetRawPtr(y_c);
@@ -735,18 +730,18 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_x()
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
                 C_z_L->Scal(1./rho);
-                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+                L1EPRestoNlp()->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
 
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
                 auto C_z_U = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
                 C_z_U->Scal(1./rho);
-                ip_nlp_l1_->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
+                L1EPRestoNlp()->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
             }
             else {
-                ip_nlp_l1_->Px_L()->MultVector(-1., *z_L, 1., *tmp);
-                ip_nlp_l1_->Px_U()->MultVector(1., *z_U, 1., *tmp);
+                L1EPRestoNlp()->Px_L()->MultVector(-1., *z_L, 1., *tmp);
+                L1EPRestoNlp()->Px_U()->MultVector(1., *z_U, 1., *tmp);
             }
 
             result = ConstPtr(tmp);
@@ -771,7 +766,6 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
     SmartPtr<const Vector> z_U = ip_data_l1_->trial()->z_U();
 
     Number rho = L1EPRestoData().GetCurrentRho();
-
     std::vector<const TaggedObject*> tdeps(5);
     tdeps[0] = GetRawPtr(x);
     tdeps[1] = GetRawPtr(y_c);
@@ -800,18 +794,18 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_x()
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzL)));
                 SmartPtr<Vector> z_L_x_only = C_z_L->GetCompNonConst(0);
                 C_z_L->Scal(1./rho);
-                ip_nlp_l1_->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
+                L1EPRestoNlp()->Px_L()->MultVector(-1., *tmpzL, 1., *tmp);
 
                 SmartPtr<Vector> tmpzU = z_U->MakeNewCopy();
                 auto C_z_U = dynamic_cast<CompoundVector*>(GetRawPtr(tmpzU));
                 DBG_ASSERT(dynamic_cast<CompundVector*>(GetRawPtr(tmpzU)));
                 SmartPtr<Vector> z_U_x_only = C_z_U->GetCompNonConst(0);
                 C_z_U->Scal(1./rho);
-                ip_nlp_l1_->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
+                L1EPRestoNlp()->Px_U()->MultVector(1., *tmpzU, 1., *tmp);
             }
             else {
-                ip_nlp_l1_->Px_L()->MultVector(-1., *z_L, 1., *tmp);
-                ip_nlp_l1_->Px_U()->MultVector(1., *z_U, 1., *tmp);
+                L1EPRestoNlp()->Px_L()->MultVector(-1., *z_L, 1., *tmp);
+                L1EPRestoNlp()->Px_U()->MultVector(1., *z_U, 1., *tmp);
             }
 
             result = ConstPtr(tmp);
@@ -847,8 +841,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_s()
         if( !trial_grad_lag_s_cache_l1_.GetCachedResult(result, deps, sdeps) )
         {
             SmartPtr<Vector> tmp = y_d->MakeNew();
-            ip_nlp_l1_->Pd_U()->MultVector(1., *v_U, 0., *tmp);
-            ip_nlp_l1_->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
+            L1EPRestoNlp()->Pd_U()->MultVector(1., *v_U, 0., *tmp);
+            L1EPRestoNlp()->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
             if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {
                 tmp->Scal(1./rho);
@@ -886,8 +880,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::trial_grad_lag_s()
         if( !curr_grad_lag_s_cache_l1_.GetCachedResult(result, deps, sdeps) )
         {
             SmartPtr<Vector> tmp = y_d->MakeNew();
-            ip_nlp_l1_->Pd_U()->MultVector(1., *v_U, 0., *tmp);
-            ip_nlp_l1_->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
+            L1EPRestoNlp()->Pd_U()->MultVector(1., *v_U, 0., *tmp);
+            L1EPRestoNlp()->Pd_L()->MultVector(-1., *v_L, 1., *tmp);
             if(L1EPRestoNlp()->l1_epr_inv_objective_type())
             {
                 tmp->Scal(1/rho);
@@ -944,8 +938,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_x()
         SmartPtr<const Vector> dampind_s_U;
         ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
 
-        ip_nlp_l1_->Px_L()->MultVector(kappa_d_l1_ * mu, *dampind_x_L, 1., *tmp);
-        ip_nlp_l1_->Px_U()->MultVector(-kappa_d_l1_ * mu, *dampind_x_U, 1., *tmp);
+        L1EPRestoNlp()->Px_L()->MultVector(kappa_d_l1_ * mu, *dampind_x_L, 1., *tmp);
+        L1EPRestoNlp()->Px_U()->MultVector(-kappa_d_l1_ * mu, *dampind_x_U, 1., *tmp);
 
         result = ConstPtr(tmp);
         curr_grad_lag_with_damping_x_cache_l1_.AddCachedResult(result, deps, sdeps);
@@ -994,8 +988,8 @@ SmartPtr<const Vector> L1ExactPenaltyRestoCQ::curr_grad_lag_with_damping_s()
         SmartPtr<const Vector> dampind_s_U;
         ComputeDampingIndicatorsL1(dampind_x_L, dampind_x_U, dampind_s_L, dampind_s_U);
 
-        ip_nlp_l1_->Pd_L()->MultVector(kappa_d_l1_ * mu, *dampind_s_L, 1., *tmp);
-        ip_nlp_l1_->Pd_U()->MultVector(-kappa_d_l1_ * mu, *dampind_s_U, 1., *tmp);
+        L1EPRestoNlp()->Pd_L()->MultVector(kappa_d_l1_ * mu, *dampind_s_L, 1., *tmp);
+        L1EPRestoNlp()->Pd_U()->MultVector(-kappa_d_l1_ * mu, *dampind_s_U, 1., *tmp);
 
         result = ConstPtr(tmp);
         curr_grad_lag_with_damping_s_cache_l1_.AddCachedResult(result, deps, sdeps);
@@ -1045,7 +1039,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_x_L_l1()
 {
     if( !IsValid(tmp_x_L_l1_) )
     {
-        tmp_x_L_l1_ = ip_nlp_l1_->x_L()->MakeNew();
+        tmp_x_L_l1_ = L1EPRestoNlp()->x_L()->MakeNew();
     }
     return *tmp_x_L_l1_;
 }
@@ -1054,7 +1048,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_x_U_l1()
 {
     if( !IsValid(tmp_x_U_l1_) )
     {
-        tmp_x_U_l1_ = ip_nlp_l1_->x_U()->MakeNew();
+        tmp_x_U_l1_ = L1EPRestoNlp()->x_U()->MakeNew();
     }
     return *tmp_x_U_l1_;
 }
@@ -1063,7 +1057,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_s_L_l1()
 {
     if( !IsValid(tmp_s_L_l1_) )
     {
-        tmp_s_L_l1_ = ip_nlp_l1_->d_L()->MakeNew();
+        tmp_s_L_l1_ = L1EPRestoNlp()->d_L()->MakeNew();
     }
     return *tmp_s_L_l1_;
 }
@@ -1072,7 +1066,7 @@ Vector& L1ExactPenaltyRestoCQ::Tmp_s_U_l1()
 {
     if( !IsValid(tmp_s_U_l1_) )
     {
-        tmp_s_U_l1_ = ip_nlp_l1_->d_U()->MakeNew();
+        tmp_s_U_l1_ = L1EPRestoNlp()->d_U()->MakeNew();
     }
     return *tmp_s_U_l1_;
 }
