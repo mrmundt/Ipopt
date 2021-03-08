@@ -78,7 +78,7 @@ Number L1ExactPenaltyRestoIpoptNLP::f(
         fact_c = rho;
     }
     // Turn x into a compound
-    const CompoundVector* c_vec = static_cast<const CompoundVector*>(&x);
+    auto* c_vec = dynamic_cast<const CompoundVector*>(&x);
     // Get x from the compound
     SmartPtr<const Vector> x_only = c_vec->GetComp(0);
     // Get the sumation of penalty variables times factor_c.

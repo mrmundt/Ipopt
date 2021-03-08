@@ -77,7 +77,7 @@ private:
     SmartPtr<IpoptData> l1_ip_data_;
     SmartPtr<Vector> l1_diag_vec_dummy_;
     SmartPtr<DiagMatrix> l1_diag_mat_dum_;
-    HessianApproximationType hessian_approximation_l1_;
+    HessianApproximationType hessian_approximation_l1_{EXACT};
 public:
     SmartPtr<const DiagMatrix> getL1DiagMatDummy();
 

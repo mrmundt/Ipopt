@@ -48,9 +48,9 @@ private:
     SmartPtr<AugSystemSolver> augSysSolver_;
     SmartPtr<PDPerturbationHandler> perturbHandler_;
     CachedResults<void*> dummy_cache_;
-    bool augsys_improved_;
-    Index min_refinement_steps_;
-    Index max_refinement_steps_;
+    bool augsys_improved_{false};
+    Index min_refinement_steps_{1};
+    Index max_refinement_steps_{10}; // Defaults: from the option definitions
     Number residual_ratio_max_;
     Number residual_ratio_singular_;
     Number residual_improvement_factor_;
