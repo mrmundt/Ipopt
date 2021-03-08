@@ -21,9 +21,9 @@ public:
             const SmartPtr<IpoptData>& l1_ip_data
     );
 
-    ~L1ExactPenaltyRestoIpoptNLP() noexcept;
+    ~L1ExactPenaltyRestoIpoptNLP();
 
-    virtual bool Initialize(
+    bool Initialize(
         const Journalist& jnlst,
         const OptionsList& options,
         const std::string& prefix
