@@ -17,6 +17,8 @@
 #include <fstream>
 #include <iterator>
 #include <chrono>
+#include <ratio>
+
 
 int main(
    int argc,
@@ -91,9 +93,12 @@ int main(
                                       AmplSuffixHandler::Number_Type);
 
    // David's mark
-    auto timenow = std::chrono::system_clock::now();
-    auto ctime = std::chrono::system_clock::to_time_t(timenow);
-    auto oname = std::to_string(ctime);
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1.time_since_epoch();
+    //auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(t1);
+    //auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+    auto oname = std::to_string(t2.count());
     app->Options()->SetStringValue("output_file", oname);
 
 
@@ -115,7 +120,7 @@ int main(
    myfile << std::endl;
    std::copy(args + 1, args + argc, std::ostream_iterator<char*>(myfile, " ")); // print the name of the problem
 
-   myfile << "\t" << std::fixed << static_cast<long int>(ctime);
+   myfile << "\t" << std::fixed << t2.count();
    Index n, m, nnzJ, nnzH;
    Ipopt::TNLP::IndexStyleEnum index_style;
    ampl_tnlp->get_nlp_info(n, m, nnzJ, nnzH, index_style);
