@@ -7,9 +7,16 @@
 #include "AmplTNLP.hpp"
 #include "IpIpoptApplication.hpp"
 #include "IpoptConfig.h"
+#include "IpUtils.hpp"
+
+#include "IpIpoptData.hpp"
+#include "IpIpoptCalculatedQuantities.hpp"
 
 #include <cstring>
 #include <cstdio>
+#include <fstream>
+#include <iterator>
+#include <chrono>
 
 int main(
    int argc,
@@ -54,6 +61,7 @@ int main(
       }
    }
 
+
    // Call Initialize the first time to create a journalist, but ignore
    // any options file
    ApplicationReturnStatus retval;
@@ -92,11 +100,42 @@ int main(
       exit(-101);
    }
 
+   // David's mark
+   std::ofstream myfile;
+   std::string fname = "l1EPR";
+   std::string ending = "_timings.txt";
+   myfile.open(fname + ending, std::ios::app);
+   myfile << std::endl;
+   std::copy(args + 1, args + argc, std::ostream_iterator<char*>(myfile, " ")); // print the name of the problem
+   auto timenow = std::chrono::system_clock::now();
+   auto ctime = std::chrono::system_clock::to_time_t(timenow);
+   myfile << "\t" << std::fixed << static_cast<long int>(ctime);
+   Index n, m, nnzJ, nnzH;
+   Ipopt::TNLP::IndexStyleEnum index_style;
+   ampl_tnlp->get_nlp_info(n, m, nnzJ, nnzH, index_style);
+   myfile << "\tn\t" << n << "\tm\t" << m;
+   myfile.close();
+
    const int n_loops = 1; // make larger for profiling
    for( Index i = 0; i < n_loops; i++ )
    {
       retval = app->OptimizeTNLP(ampl_tnlp);
    }
+
+   // David's mark
+   myfile.open(fname + ending, std::ios::app);
+   auto app_data = app->IpoptDataObject();
+   auto app_cqs = app->IpoptCQObject();
+   auto it_count = app_data->iter_count();
+   auto cpu_timing = app_data->TimingStats().OverallAlgorithm().TotalCpuTime();
+   std::cout.precision(8);
+   myfile << "\tIter\t" << it_count;
+   myfile << "\tCPUs\t" << std::scientific << cpu_timing;
+   myfile << "\tf:\t" << app_cqs->curr_f();
+   myfile << "\tinf_pr:\t" << app_cqs->curr_primal_infeasibility(NORM_MAX);
+   myfile << "\tinf_du:\t" << app_cqs->curr_dual_infeasibility(NORM_MAX);
+   myfile << "\tSTAT:\t" << retval;
+   myfile.close();
 
    // finalize_solution method in AmplTNLP writes the solution file
 
