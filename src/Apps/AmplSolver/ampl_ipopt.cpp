@@ -90,7 +90,14 @@ int main(
    suffix_handler->AddAvailableSuffix("ipopt_zU_in", AmplSuffixHandler::Variable_Source,
                                       AmplSuffixHandler::Number_Type);
 
-   SmartPtr<TNLP> ampl_tnlp = new AmplTNLP(ConstPtr(app->Jnlst()), app->Options(), args, suffix_handler);
+   // David's mark
+    auto timenow = std::chrono::system_clock::now();
+    auto ctime = std::chrono::system_clock::to_time_t(timenow);
+    auto oname = std::to_string(ctime);
+    app->Options()->SetStringValue("output_file", oname);
+
+
+    SmartPtr<TNLP> ampl_tnlp = new AmplTNLP(ConstPtr(app->Jnlst()), app->Options(), args, suffix_handler);
 
    // Call Initialize again to process output related options
    retval = app->Initialize();
@@ -107,8 +114,7 @@ int main(
    myfile.open(fname + ending, std::ios::app);
    myfile << std::endl;
    std::copy(args + 1, args + argc, std::ostream_iterator<char*>(myfile, " ")); // print the name of the problem
-   auto timenow = std::chrono::system_clock::now();
-   auto ctime = std::chrono::system_clock::to_time_t(timenow);
+
    myfile << "\t" << std::fixed << static_cast<long int>(ctime);
    Index n, m, nnzJ, nnzH;
    Ipopt::TNLP::IndexStyleEnum index_style;
