@@ -7,9 +7,18 @@
 #include "AmplTNLP.hpp"
 #include "IpIpoptApplication.hpp"
 #include "IpoptConfig.h"
+#include "IpUtils.hpp"
+
+#include "IpIpoptData.hpp"
+#include "IpIpoptCalculatedQuantities.hpp"
 
 #include <cstring>
 #include <cstdio>
+#include <fstream>
+#include <iterator>
+#include <chrono>
+#include <ratio>
+
 
 int main(
    int argc,
@@ -54,6 +63,7 @@ int main(
       }
    }
 
+
    // Call Initialize the first time to create a journalist, but ignore
    // any options file
    ApplicationReturnStatus retval;
@@ -82,7 +92,17 @@ int main(
    suffix_handler->AddAvailableSuffix("ipopt_zU_in", AmplSuffixHandler::Variable_Source,
                                       AmplSuffixHandler::Number_Type);
 
-   SmartPtr<TNLP> ampl_tnlp = new AmplTNLP(ConstPtr(app->Jnlst()), app->Options(), args, suffix_handler);
+   // David's mark
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = t1.time_since_epoch();
+    //auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(t1);
+    //auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+    auto oname = std::to_string(t2.count());
+    app->Options()->SetStringValue("output_file", oname);
+
+
+    SmartPtr<TNLP> ampl_tnlp = new AmplTNLP(ConstPtr(app->Jnlst()), app->Options(), args, suffix_handler);
 
    // Call Initialize again to process output related options
    retval = app->Initialize();
@@ -92,11 +112,41 @@ int main(
       exit(-101);
    }
 
+   // David's mark
+   std::ofstream myfile;
+   std::string fname = "l1EPR";
+   std::string ending = "_timings.txt";
+   myfile.open(fname + ending, std::ios::app);
+   myfile << std::endl;
+   std::copy(args + 1, args + argc, std::ostream_iterator<char*>(myfile, " ")); // print the name of the problem
+
+   myfile << "\t" << std::fixed << t2.count();
+   Index n, m, nnzJ, nnzH;
+   Ipopt::TNLP::IndexStyleEnum index_style;
+   ampl_tnlp->get_nlp_info(n, m, nnzJ, nnzH, index_style);
+   myfile << "\tn\t" << n << "\tm\t" << m;
+   myfile.close();
+
    const int n_loops = 1; // make larger for profiling
    for( Index i = 0; i < n_loops; i++ )
    {
       retval = app->OptimizeTNLP(ampl_tnlp);
    }
+
+   // David's mark
+   myfile.open(fname + ending, std::ios::app);
+   auto app_data = app->IpoptDataObject();
+   auto app_cqs = app->IpoptCQObject();
+   auto it_count = app_data->iter_count();
+   auto cpu_timing = app_data->TimingStats().OverallAlgorithm().TotalCpuTime();
+   std::cout.precision(8);
+   myfile << "\tIter\t" << it_count;
+   myfile << "\tCPUs\t" << std::scientific << cpu_timing;
+   myfile << "\tf:\t" << app_cqs->curr_f();
+   myfile << "\tinf_pr:\t" << app_cqs->curr_primal_infeasibility(NORM_MAX);
+   myfile << "\tinf_du:\t" << app_cqs->curr_dual_infeasibility(NORM_MAX);
+   myfile << "\tSTAT:\t" << retval;
+   myfile.close();
 
    // finalize_solution method in AmplTNLP writes the solution file
 
