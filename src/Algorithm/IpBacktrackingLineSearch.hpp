@@ -445,12 +445,16 @@ private:
    /** Flag indicating if a tiny step was detected in previous iteration */
    bool tiny_step_last_iteration_;
 
+   /** Override the restoration call exception */
+   bool override_resto_exception_{false};
+
    /** @name Strategy objective that are used */
    //@{
    SmartPtr<BacktrackingLSAcceptor> acceptor_;
    SmartPtr<RestorationPhase> resto_phase_;
    SmartPtr<ConvergenceCheck> conv_check_;
    //@}
+
 };
 
 } // namespace Ipopt

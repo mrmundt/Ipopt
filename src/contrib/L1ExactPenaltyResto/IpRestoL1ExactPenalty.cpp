@@ -119,7 +119,7 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
                            "Original primal inf is less than the tolerance.");
             //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
             //                "Restoration phase converged to a point with small primal infeasibility");
-            //retval = 0;
+            retval = 0;
         }
         else
         {
@@ -151,6 +151,13 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
     {
         THROW_EXCEPTION(RESTORATION_USER_STOP, "User requested stop during restoration phase.");
     }
+    else if (l1_status == DIVERGING_ITERATES)
+    {
+        Jnlst().Printf(J_ERROR, J_MAIN,
+                       "Iterates are diverging; the value of the penalty parameter might be too high.\n "
+                       );
+        retval = 1;
+    }
     else
     {
         Jnlst().Printf(J_ERROR, J_MAIN,
@@ -166,8 +173,15 @@ bool L1ExactPenaltyRestorationPhase::PerformRestoration()
 
         SmartPtr<const Vector> l1_curr_s = l1_ip_data->curr()->s();
         SmartPtr<const CompoundVector> cs = dynamic_cast<const CompoundVector*>(GetRawPtr(l1_curr_s));
-
-        SmartPtr<IteratesVector> trial = IpData().trial()->MakeNewContainer();
+        SmartPtr<const IteratesVector> itVec;
+        // l1_status not SUCCEEDING but accepting STOP_AT_ACCEPTABLE_POINT requires a new IteratesVector
+        if(!IsValid(IpData().trial())){
+            itVec = IpData().curr();
+        }
+        else{
+            itVec = IpData().trial();
+        }
+        SmartPtr<IteratesVector> trial = itVec->MakeNewContainer();
         trial->Set_primal(*cx->GetComp(0), *cs->GetComp(0));
         IpData().set_trial(trial);
 

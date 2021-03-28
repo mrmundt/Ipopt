@@ -187,6 +187,14 @@ void BacktrackingLineSearch::RegisterOptions(
       10,
       "If the soft restoration phase is performed for more than so many iterations in a row, "
       "the regular restoration phase is called.");
+   roptions->AddStringOption2(
+           "override_resto_exception",
+           "Get rid of the stop at Restoration is called at X exception during the BacktrakingLS",
+           "no",
+           "no", "Do not do anything",
+           "yes", "Continue the search even though the restoration phase is called at forbidden points",
+           "This option enables the algorithm to continue even though restoration is not allowed at certain points"
+           );
 }
 
 bool BacktrackingLineSearch::InitializeImpl(
@@ -218,6 +226,8 @@ bool BacktrackingLineSearch::InitializeImpl(
    options.GetIntegerValue("watchdog_shortened_iter_trigger", watchdog_shortened_iter_trigger_, prefix);
    options.GetNumericValue("soft_resto_pderror_reduction_factor", soft_resto_pderror_reduction_factor_, prefix);
    options.GetIntegerValue("max_soft_resto_iters", max_soft_resto_iters_, prefix);
+
+   options.GetBoolValue("override_resto_exception", override_resto_exception_, prefix);
 
    bool retvalue = true;
    if( IsValid(resto_phase_) )
@@ -584,7 +594,9 @@ void BacktrackingLineSearch::FindAcceptableTrialPoint()
                   Jnlst().Printf(J_STRONGWARNING, J_LINE_SEARCH,
                                  "Restoration phase is called at point that is almost feasible,\n  with constraint violation %e. Abort.\n",
                                  IpCq().curr_constraint_violation());
-                  THROW_EXCEPTION(RESTORATION_FAILED, "Restoration phase called, but point is almost feasible.");
+                   if (!override_resto_exception_){
+                       THROW_EXCEPTION(RESTORATION_FAILED, "Restoration phase called, but point is almost feasible.");
+                   }
                }
             }
 

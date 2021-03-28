@@ -277,6 +277,9 @@ bool L1ExactPenaltyRhoUpdater::UpdateRhoTrial() {
     if (old_rho < trial_rho)
     {
         new_rho = trial_rho + 1.;
+        new_rho = new_rho < l1_epr_max_rho * 10. ? new_rho : l1_epr_max_rho * 10.; // Put a maximum value on this x10 times.
+
+
         IpData().Append_info_string(" rhoT");
     }
     else if (!l1_epr_suff_feasib_update_ && old_rho < l1_epr_max_rho)
