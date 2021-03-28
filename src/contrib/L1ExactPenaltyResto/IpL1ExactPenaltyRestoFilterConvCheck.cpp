@@ -174,9 +174,8 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
                 else
                 {
                     Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
-                                   "Restoration phase converged to a feasible point that is\n"
-                                   "unacceptable to the filter for the original problem.\n");
-                    // I just want it to return "CONVERGED"
+                                   "l1-ep Restoration phase converged to a feasible point\n");
+                                   // I just want it to return "CONVERGED"
                     //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
                     //                "Restoration phase converged to a feasible point that is "
                     //                "unacceptable to the filter for the original problem.");
