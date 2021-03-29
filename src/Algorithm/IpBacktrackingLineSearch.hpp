@@ -447,6 +447,9 @@ private:
 
    /** Override the restoration call exception */
    bool override_resto_exception_{false};
+   bool fallback_called_previous_{false};
+   Index successive_fallback_calls_{0};
+   Index max_succesive_fallback_calls_{5};
 
    /** @name Strategy objective that are used */
    //@{
