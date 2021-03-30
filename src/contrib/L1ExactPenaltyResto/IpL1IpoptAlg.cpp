@@ -286,7 +286,7 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
     {
         exc.ReportException(Jnlst(), J_MOREDETAILED);
         IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
-        retval = MAXITER_EXCEEDED;
+        retval = RESTORATION_FAILURE;
     }
     catch (RESTORATION_MAXITER_EXCEEDED& exc)
     {
