@@ -48,9 +48,7 @@ public:
             bool isResto = false
             );
 
-    static void RegisterOptions(
-            SmartPtr<RegisteredOptions> roptions
-            );
+
 
     L1IpoptAlg() = delete;
     L1IpoptAlg& operator =(const L1IpoptAlg&) = delete;

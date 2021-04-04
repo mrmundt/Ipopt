@@ -1,6 +1,15 @@
 //
-// Created by David on 1/3/2021.
+// Created by David Thierry on 1/3/2021.
 //
+// Based on :
+// Copyright (C) 2004, 2008 International Business Machines and others.
+// All Rights Reserved.
+// This code is published under the Eclipse Public License.
+//
+// Authors:  Carl Laird, Andreas Waechter     IBM    2004-08-13
+//
+//           A Waechter: moved most code to IpRestoConvCheck.cpp 2008-06-24
+
 
 #ifndef SRC_IPL1EXACTPENALTYRESTOFILTERCONVCHECK_HPP
 #define SRC_IPL1EXACTPENALTYRESTOFILTERCONVCHECK_HPP
@@ -10,12 +19,18 @@
 
 namespace Ipopt
 {
-
+/** This is the implementation of the l1-EP restoration convergence check.
+ *  For this one, we do not check the filter of the original problem.
+ */
 class L1ExactPenaltyRestoFilterConvCheck: public OptimalityErrorConvergenceCheck
 {
 public:
+    /**@name Constructors/Destructors */
+    //@{
+    /** Default Constructor */
     L1ExactPenaltyRestoFilterConvCheck();
 
+    /** Destructor */
     ~L1ExactPenaltyRestoFilterConvCheck() override = default;
 
     bool InitializeImpl(
@@ -32,31 +47,26 @@ public:
             SmartPtr<RegisteredOptions> roptions
             );
 
+    /**@name Default Compiler Generated Methods
+    * (Hidden to avoid implicit creation/calling).
+    *
+    * These methods are not implemented
+    * and we do not want the compiler to implement them for us, so we
+    * declare them private and do not define them. This ensures that
+    * they will not be implicitly created/called.
+    */
+    //@{
+    /** Copy Constructor */
+    L1ExactPenaltyRestoFilterConvCheck(const L1ExactPenaltyRestoFilterConvCheck&) = delete;
+    /** Default Assignment Operator */
+    L1ExactPenaltyRestoFilterConvCheck& operator = (const L1ExactPenaltyRestoFilterConvCheck&) = delete;
+    //@}
 private:
 
-    L1ExactPenaltyRestoFilterConvCheck(
-            const L1ExactPenaltyRestoFilterConvCheck&
-            );
-
-    void operator=(
-            const L1ExactPenaltyRestoFilterConvCheck&
-            );
-
-    //virtual ConvergenceStatus TestOrigProgress(
-    //        Number orig_trial_barr,
-    //        Number orit_trial_theta
-    //        ) = 0;
-
-    //Number kappa_resto_;
 
     Index maximum_iters_l1_;
-
-    //Index maximum_resto_iters_;
-
     Number orig_constr_viol_tol_;
-
     bool first_resto_iter_;
-
     Index succesive_resto_iter_;
 };
 
