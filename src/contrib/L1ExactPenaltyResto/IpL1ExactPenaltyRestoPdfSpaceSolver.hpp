@@ -43,9 +43,7 @@ public:
     L1ExactPenaltyRestoPDFSpaceSolver& operator =(const L1ExactPenaltyRestoPDFSpaceSolver&) = delete;
 private:
 
-    L1ExactPenaltyRestoPDFSpaceSolver& operator=(
-            const L1ExactPenaltyRestoPDFSpaceSolver&
-            );
+    // Gosh.
 
     SmartPtr<AugSystemSolver> augSysSolver_;
     SmartPtr<PDPerturbationHandler> perturbHandler_;
