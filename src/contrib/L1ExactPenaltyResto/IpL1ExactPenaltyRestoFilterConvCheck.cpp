@@ -23,7 +23,8 @@ L1ExactPenaltyRestoFilterConvCheck::L1ExactPenaltyRestoFilterConvCheck()
 
 void L1ExactPenaltyRestoFilterConvCheck::RegisterOptions(
         SmartPtr<RegisteredOptions> roptions)
-{}
+{// no options here yet
+}
 
 bool L1ExactPenaltyRestoFilterConvCheck::InitializeImpl(
         const OptionsList &options, const std::string &prefix)
@@ -162,9 +163,7 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
                 //        if (orig_trial_primal_inf <= 1e2*orig_ip_data->tol()) {
                 if( IpData().tol() > 1e-1 * orig_ip_data->tol() )
                 {
-                    // For once, we tighten the convergence tolerance for the
-                    // restoration phase problem in case the problem is only
-                    // very slightly infeasible.
+                    // From the original strategy?
                     IpData().Set_tol(1e-2 * IpData().tol());
                     status = CONTINUE;
                     Jnlst().Printf(J_DETAILED, J_LINE_SEARCH,
@@ -174,9 +173,8 @@ ConvergenceCheck::ConvergenceStatus L1ExactPenaltyRestoFilterConvCheck::CheckCon
                 else
                 {
                     Jnlst().Printf(J_WARNING, J_LINE_SEARCH,
-                                   "Restoration phase converged to a feasible point that is\n"
-                                   "unacceptable to the filter for the original problem.\n");
-                    // I just want it to return "CONVERGED"
+                                   "l1-ep Restoration phase converged to a feasible point\n");
+                                   // I just want it to return "CONVERGED"
                     //THROW_EXCEPTION(RESTORATION_CONVERGED_TO_FEASIBLE_POINT,
                     //                "Restoration phase converged to a feasible point that is "
                     //                "unacceptable to the filter for the original problem.");

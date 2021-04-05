@@ -1,6 +1,6 @@
 //
-// Created by David on 1/6/2021.
-//
+// Created by David Thierry on 1/6/2021.
+// We need to add some comments
 
 #ifndef SRC_IPL1IPOPTALG_HPP
 #define SRC_IPL1IPOPTALG_HPP
@@ -48,9 +48,7 @@ public:
             bool isResto = false
             );
 
-    static void RegisterOptions(
-            SmartPtr<RegisteredOptions> roptions
-            );
+
 
     L1IpoptAlg() = delete;
     L1IpoptAlg& operator =(const L1IpoptAlg&) = delete;

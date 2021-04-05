@@ -286,7 +286,7 @@ SolverReturn L1IpoptAlg::Optimize(bool isResto)
     {
         exc.ReportException(Jnlst(), J_MOREDETAILED);
         IpData().TimingStats().ComputeAcceptableTrialPoint().EndIfStarted();
-        retval = MAXITER_EXCEEDED;
+        retval = RESTORATION_FAILURE;
     }
     catch (RESTORATION_MAXITER_EXCEEDED& exc)
     {
@@ -388,7 +388,7 @@ void L1IpoptAlg::AcceptTrialPoint()
                        "Line search didn't find acceptable trial point.\n");
         return;
     }
-
+    // Long awaited bug-fixes
     Index adjusted_slacks = IpCq().AdjustedTrialSlacks();
     DBG_PRINT((1, "adjusted_slack = %d\n", adjusted_slack));
     if(adjusted_slacks > 0)

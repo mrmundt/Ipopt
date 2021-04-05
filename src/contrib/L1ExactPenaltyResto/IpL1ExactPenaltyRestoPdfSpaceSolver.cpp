@@ -359,17 +359,9 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
                                                   const IteratesVector &rhs,
                                                   IteratesVector &res)
 {
-    // TO DO LIST:
-    //
-    // 1. decide for reasonable return codes (e.g. fatal error, too
-    //    ill-conditioned...)
-    // 2. Make constants parameters that can be set from the outside
-    // 3. Get Information out of Ipopt structures
-    // 4. add heuristic for structurally singular problems
-    // 5. see if it makes sense to distinguish delta_x and delta_s,
-    //    or delta_c and delta_d
-    // 6. increase pivot tolerance if number of get evals so too small
-    DBG_START_METH("PDFullSpaceSolver::SolveOnce", dbg_verbosity);
+
+    //Check todo list from the original file
+    DBG_START_METH("L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce", dbg_verbosity);
     SmartPtr<Vector> tmp;
     Number s_fact = 1.;
     Number rho = dynamic_cast<L1ExactPenaltyRestoData*>(&IpData().AdditionalData())->GetCurrentRho();
@@ -421,10 +413,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     Pd_L.AddMSinvZ(s_fact, slack_s_L, *rhs.v_L(), *augRhs_s);
     Pd_U.AddMSinvZ(-s_fact, slack_s_U, *rhs.v_U(), *augRhs_s);
 
-    // Get space into which we can put the solution of the augmented system
     SmartPtr<IteratesVector> sol = res.MakeNewIteratesVector(true);
 
-    // Now check whether any data has changed
     std::vector<const TaggedObject*> deps(13);
     deps[0] = &W;
     deps[1] = &J_c;
@@ -446,8 +436,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
         dummy_cache_.AddCachedResult(dummy, deps);
         augsys_improved_ = false;
     }
-    // improve_current_solution can only be true, if that system has
-    // been solved before
+
+
     DBG_ASSERT((!resolve_with_better_quality && !pretend_singular) || uptodate);
     (void) resolve_with_better_quality;
 
@@ -455,21 +445,15 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     if( uptodate && !pretend_singular )
     {
 
-        // Get the perturbation values
+
         Number delta_x;
         Number delta_s;
         Number delta_c;
         Number delta_d;
         perturbHandler_->CurrentPerturbation(delta_x, delta_s, delta_c, delta_d);
 
-        // No need to go through the pain of finding the appropriate
-        // values for the deltas, because the matrix hasn't changed since
-        // the last call.  So, just call the Solve Method
-        //
-        // Note: resolve_with_better_quality is true, then the Solve
-        // method has already asked the augSysSolver to increase the
-        // quality at the end solve, and we are now getting the solution
-        // with that better quality
+
+
         retval = augSysSolver_->Solve(&W, 1.0, &sigma_x, delta_x, &sigma_s, delta_s, &J_c, NULL, delta_c, &J_d, NULL,
                                       delta_d, *augRhs_x, *augRhs_s, *rhs.y_c(), *rhs.y_d(), *sol->x_NonConst(), *sol->s_NonConst(),
                                       *sol->y_c_NonConst(), *sol->y_d_NonConst(), false, 0);
@@ -482,12 +466,11 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
     else
     {
         const Index numberOfEVals = rhs.y_c()->Dim() + rhs.y_d()->Dim();
-        // counter for the number of trial evaluations
-        // (ToDo is not at the correct place)
+
         Index count = 0;
 
-        // Get the very first perturbation values from the perturbation
-        // Handler
+
+
         Number delta_x;
         Number delta_s;
         Number delta_c;
@@ -527,8 +510,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
             if( retval == SYMSOLVER_SINGULAR && (rhs.y_c()->Dim() + rhs.y_d()->Dim() > 0) )
             {
 
-                // Get new perturbation factors from the perturbation
-                // handlers for the singular case
+
+
                 bool pert_return = perturbHandler_->PerturbForSingularity(delta_x, delta_s, delta_c, delta_d);
                 if( !pert_return )
                 {
@@ -542,10 +525,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
             {
                 Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
                                "Number of negative eigenvalues too small!\n");
-                // If the number of negative eigenvalues is too small, then
-                // we first try to remedy this by asking for better quality
-                // solution (e.g. increasing pivot tolerance), and if that
-                // doesn't help, we assume that the system is singular
+
+
                 bool assume_singular = true;
                 if( !augsys_improved_ )
                 {
@@ -578,8 +559,8 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
             }
             else if( retval == SYMSOLVER_WRONG_INERTIA || retval == SYMSOLVER_SINGULAR )
             {
-                // Get new perturbation factors from the perturbation
-                // handlers for the case of wrong inertia
+
+
                 bool pert_return = perturbHandler_->PerturbForWrongInertia(delta_x, delta_s, delta_c, delta_d);
                 if( !pert_return )
                 {
@@ -592,11 +573,11 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
             else if (neg_curv_test_tol_ > 0.)
             {
                 DBG_ASSERT(augSysSolver_->ProvidesInertia());
-                // we now check if the inertia is possible wrong
+
                 Index neg_values = augSysSolver_->NumberOfNegEVals();
                 if (neg_values != numberOfEVals)
                 {
-                    // check if we have a direction of sufficient positive curvature
+
                     SmartPtr<Vector> x_tmp = sol->x()->MakeNew();
                     W.MultVector(1., *sol->x(), 0., *x_tmp);
                     Number xWx = x_tmp->Dot(*sol->x());
@@ -639,26 +620,25 @@ bool L1ExactPenaltyRestoPDFSpaceSolver::SolveOnce(bool resolve_with_better_quali
             }
         }
 
-        // Some output
+
         Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
                        "Number of trial factorizations performed: %d\n", count);
         Jnlst().Printf(J_DETAILED, J_LINEAR_ALGEBRA,
                        "Perturbation parameters: delta_x=%e delta_s=%e\n"
                        "                         delta_c=%e delta_d=%e\n", delta_x,
                        delta_s, delta_c, delta_d);
-        // Set the perturbation values in the Data object
+
         IpData().setPDPert(delta_x, delta_s, delta_c, delta_d);
     }
 
-    // Compute the remaining sol Vectors
 
-    // This needs to be changed.
+
     Px_L.SinvBlrmZMTdBr(-1., slack_x_L, *rhs.z_L(), z_L, *sol->x(), *sol->z_L_NonConst());
     Px_U.SinvBlrmZMTdBr(1., slack_x_U, *rhs.z_U(), z_U, *sol->x(), *sol->z_U_NonConst());
     Pd_L.SinvBlrmZMTdBr(-1., slack_s_L, *rhs.v_L(), v_L, *sol->s(), *sol->v_L_NonConst());
     Pd_U.SinvBlrmZMTdBr(1., slack_s_U, *rhs.v_U(), v_U, *sol->s(), *sol->v_U_NonConst());
 
-    // Finally let's assemble the res result vectors
+
     res.AddOneVector(alpha, *sol, beta);
 
     IpData().TimingStats().PDSystemSolverSolveOnce().End();
