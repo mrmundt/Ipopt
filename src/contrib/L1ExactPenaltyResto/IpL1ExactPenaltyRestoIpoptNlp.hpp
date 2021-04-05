@@ -21,7 +21,7 @@ public:
             const SmartPtr<IpoptData>& l1_ip_data
     );
 
-    ~L1ExactPenaltyRestoIpoptNLP();
+    ~L1ExactPenaltyRestoIpoptNLP() override;
 
     bool Initialize(
         const Journalist& jnlst,
@@ -64,27 +64,42 @@ public:
 
 
     SmartPtr<const SymMatrix> uninitialized_h() override;
+
     bool objective_depends_on_mu_rho() const
     {
         return true;
     }
 
     Number Rho() const override;
+    SmartPtr<const DiagMatrix> getL1DiagMatDummy();
+    IpL1ExactPenaltyObjectiveType getL1EprObjectiveType() const {
+        return l1_epr_objective_type_;
+    }
 
-
+    /**@name Default Compiler Generated Methods
+    * (Hidden to avoid implicit creation/calling).
+    *
+    * These methods are not implemented and
+    * we do not want the compiler to implement
+    * them for us, so we declare them private
+    * and do not define them. This ensures that
+    * they will not be implicitly created/called. */
+    //@{
+    /** Default Constructor */
+    L1ExactPenaltyRestoIpoptNLP() = delete;
+    /** Copy Constructor */
+    L1ExactPenaltyRestoIpoptNLP(const L1ExactPenaltyRestoIpoptNLP&) = delete;
+    /** Default Assignment Operator */
+    L1ExactPenaltyRestoIpoptNLP& operator =(const L1ExactPenaltyRestoIpoptNLP&) = delete;
+    //@}
 private:
     IpL1ExactPenaltyObjectiveType l1_epr_objective_type_{CONSTRAINT};
     SmartPtr<IpoptData> l1_ip_data_;
     SmartPtr<Vector> l1_diag_vec_dummy_;
     SmartPtr<DiagMatrix> l1_diag_mat_dum_;
     HessianApproximationType hessian_approximation_l1_{EXACT};
-public:
-    SmartPtr<const DiagMatrix> getL1DiagMatDummy();
 
-public:
-    IpL1ExactPenaltyObjectiveType getL1EprObjectiveType() const {
-        return l1_epr_objective_type_;
-    }
+
 };
 }
 

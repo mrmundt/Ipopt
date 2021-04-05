@@ -1,6 +1,6 @@
 //
 // Created by David on 1/14/2021.
-//
+// We need some comments.
 
 #ifndef SRC_IPRESTOL1EXACTPENALTY_HPP
 #define SRC_IPRESTOL1EXACTPENALTY_HPP
@@ -25,15 +25,17 @@ public:
 
     static void RegisterOptions(SmartPtr<RegisteredOptions> roptions);
 
+    L1ExactPenaltyRestorationPhase() = delete;
+
+    L1ExactPenaltyRestorationPhase(const L1ExactPenaltyRestorationPhase&) = delete;
+
+    L1ExactPenaltyRestorationPhase& operator=(const L1ExactPenaltyRestorationPhase&) = delete;
+
 protected:
     bool PerformRestoration() override;
 
 private:
-    L1ExactPenaltyRestorationPhase();
 
-    L1ExactPenaltyRestorationPhase(const L1ExactPenaltyRestorationPhase&);
-
-    void operator=(const L1ExactPenaltyRestorationPhase&);
 
     SmartPtr<L1IpoptAlg> resto_alg_;
     SmartPtr<EqMultiplierCalculator> eq_mult_calculator_;

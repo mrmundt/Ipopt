@@ -1,6 +1,6 @@
 //
-// Created by David on 12/29/2020.
-//
+// Created by David Thierry on 12/29/2020.
+// We need comments here.
 
 #ifndef SRC_IPL1EXACTPENALTYRESTOPDFSPACESOLVER_HPP
 #define SRC_IPL1EXACTPENALTYRESTOPDFSPACESOLVER_HPP
@@ -38,8 +38,10 @@ public:
             const SmartPtr<RegisteredOptions>& roptions
             );
 
+    L1ExactPenaltyRestoPDFSpaceSolver() = delete;
+    L1ExactPenaltyRestoPDFSpaceSolver(const L1ExactPenaltyRestoPDFSpaceSolver&) = delete;
+    L1ExactPenaltyRestoPDFSpaceSolver& operator =(const L1ExactPenaltyRestoPDFSpaceSolver&) = delete;
 private:
-    L1ExactPenaltyRestoPDFSpaceSolver();
 
     L1ExactPenaltyRestoPDFSpaceSolver& operator=(
             const L1ExactPenaltyRestoPDFSpaceSolver&
