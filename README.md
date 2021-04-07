@@ -135,3 +135,38 @@ Since a lot of time and effort has gone into Ipopt's development, **please cite 
 
 * A. Wächter and L. T. Biegler, **[On the Implementation of a Primal-Dual Interior Point Filter Line Search Algorithm for Large-Scale Nonlinear Programming](http://dx.doi.org/10.1007/s10107-004-0559-y)**, _Mathematical Programming_ 106(1), pp. 25-57, 2006
   ([preprint](http://www.optimization-online.org/DB_HTML/2004/03/836.html))
+
+Experimental Options
+--------------------
+
+### L1-EP Restoration
+This is an alternative for problems that have linearly dependent constraint gradients, either locally or globally. 
+
+In this scheme, the restoration phase is changed to the following problem. 
+```
+ minimize    f(x) + rho * (p + n)^T e
+  x ∈ Rⁿ,
+ p, n ∈ Rᵐ
+subject to   c(x) + s - p + n ≤ 0,
+             x_L ≤  x   ≤ x_U,
+             g_L ≤  s   ≤ g_U,
+                   p, n ≥ 0
+```
+Where `rho ∈ [0, +inf]` and `e = [1, 1, ..., 1]`.
+
+This replaces the _normal_ restoration phase of Ipopt, and forces the algorithm to _stay_ in _l1_ mode until the end. 
+
+A good rule of thumb is to use this mode if there is beforehand knowledge of the dependencies of the gradients,
+e.g., use the `start_with_resto` option.
+
+This problem is almost always better taking steps for ill-posed problems, however it has the trade-off of might 
+find stationary points that are not feasible for the original problem (e.g. `p, n` not zero)
+
+* `restoration_method` : Default `normal`, set to `l1` for the new strategy.
+* `l1_init_penalty`: Default `1E+03`, make sure to use a value that is not too large.
+* `l1_penalty_type`: `X` (where `X` can be `quadratic_model`, `linear_model`, `fixed`, and `quadratic_model_no_sigma`. Default=`linear_model`)
+* `l1_epsilon`: Default `0.1`. Value `0 <= X <= 1`, determines the aggressiveness of the update by feasibility measure.
+* `override_resto_exception`: Default `no`. Set to `yes` if the `"Restoration phase is called at point that is almost feasible,  with constraint violation."` 
+gets in the way. 
+
+Use it wisely. 
