@@ -1,10 +1,10 @@
 # Copyright (C) 2004, 2008 International Business Machines and others.
 # All Rights Reserved.
 # This file is distributed under the Eclipse Public License.
-
+#
 # Authors:  Carl Laird, Andreas Waechter     IBM    2004-08-13
 
-SUBDIRS = src/Common src/LinAlg src/Algorithm src/contrib/CGPenalty
+SUBDIRS = src/Common src/LinAlg src/Algorithm src/contrib/CGPenalty src/contrib/L1ExactPenaltyResto
 
 if BUILD_LINEARSOLVERLOADER
   SUBDIRS += src/contrib/LinearSolverLoader
@@ -14,10 +14,6 @@ SUBDIRS += src/Interfaces src/Apps
 
 if BUILD_SIPOPT
   SUBDIRS += contrib/sIPOPT
-endif
-
-if ALWAYS_FALSE
-  SUBDIRS += test
 endif
 
 doc_DATA = README.md AUTHORS LICENSE

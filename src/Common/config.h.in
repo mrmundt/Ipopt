@@ -80,6 +80,9 @@
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
 
+/* Define to 1 if windows.h is available. */
+#undef HAVE_WINDOWS_H
+
 /* Define to 1 if you have the `_snprintf' function. */
 #undef HAVE__SNPRINTF
 
@@ -143,13 +146,6 @@
 
 /* Define to 1 if WSMP is available */
 #undef IPOPT_HAS_WSMP
-
-/* Define to a macro mangling the given C identifier (in lower and upper
-   case). */
-#undef IPOPT_HSL_FUNC
-
-/* As IPOPT_HSL_FUNC, but for C identifiers containing underscores. */
-#undef IPOPT_HSL_FUNC_
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case). */

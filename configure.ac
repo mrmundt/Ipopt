@@ -1,19 +1,17 @@
 # Copyright (C) 2004, 2011 International Business Machines and others.
 # All Rights Reserved.
 # This file is distributed under the Eclipse Public License.
-
+#
 # Authors:  Carl Laird, Andreas Waechter     IBM    2004-08-13
 
 #############################################################################
 #                       Names and other basic things                        #
 #############################################################################
 
-AC_PREREQ(2.59)
+AC_INIT([Ipopt],[3.13.3],[https://github.com/coin-or/Ipopt/issues/new],,[https://github.com/coin-or/Ipopt])
 
-AC_INIT([Ipopt],[3.13.2],[https://github.com/coin-or/Ipopt/issues/new],,[https://github.com/coin-or/Ipopt])
-
-AC_COPYRIGHT(
-[Copyright 2004, 2011 International Business Machines and others.
+AC_COPYRIGHT([
+Copyright 2004, 2011 International Business Machines and others.
 All Rights Reserved.
 This file is part of the open source package IPOPT which is distributed
 under the Eclipse Public License.])
@@ -65,11 +63,6 @@ AC_COIN_DEBUGLEVEL
 
 AC_COIN_CHK_LIBM(IpoptLib)
 
-#AC_COIN_CHK_BLAS(IpoptLib)
-#if test $coin_has_blas != yes; then
-#  AC_MSG_ERROR([Required package BLAS not found.])
-#fi
-
 AC_COIN_CHK_LAPACK(IpoptLib)
 if test $coin_has_lapack != yes; then
   AC_MSG_ERROR([Required package LAPACK not found.])
@@ -98,6 +91,9 @@ have_ma28=no
 if test "$coin_has_hsl" = yes ; then
   AC_COIN_FINALIZE_FLAGS([HSLLib])
   AC_COIN_NAMEMANGLING([HSL],[ma27ad],[$HSLLIB_LFLAGS])
+  if test "$ac_cv_hsl_namemangling" = "unknown" ; then
+    AC_MSG_ERROR([Provided package HSL is not working or does not contain MA27.])
+  fi
 
   # extra check for MA28, since that decides whether we have to build IpMa28Partition.F
   if test -n "$F77" ; then
@@ -310,6 +306,21 @@ if test "$enable_java" != no ; then
 fi
 
 if test "$enable_java" != no ; then
+  AC_MSG_CHECKING([if javac supports -h])
+  echo "public abstract class conftest { private native boolean test(); }" > conftest.java
+  $as_echo "$as_me:${as_lineno-$LINENO}: $JAVAC conftest.java -h conftest.header" >&AS_MESSAGE_LOG_FD
+  "$JAVAC" conftest.java -h conftest.header >&AS_MESSAGE_LOG_FD
+  if test -e conftest.header/conftest.h ; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
+    cat conftest.java >&AS_MESSAGE_LOG_FD
+    enable_java=no
+  fi
+fi
+
+if test "$enable_java" != no ; then
   # look for jni header: required to compile C++ part of Java interface
   AX_JNI_INCLUDE_DIR
   if test -z "$JNI_INCLUDE_DIRS" ; then
@@ -344,7 +355,7 @@ AM_CONDITIONAL([BUILD_JAVA], [test "$enable_java" != no])
 # is made)
 
 AC_SUBST(IPALLLIBS)
-IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
+IPALLLIBS="../contrib/CGPenalty/libcgpenalty.la ../contrib/L1ExactPenaltyResto/lib_l1.la  ../Algorithm/libipoptalg.la ../Algorithm/LinearSolvers/liblinsolvers.la ../Common/libcommon.la ../LinAlg/liblinalg.la ../LinAlg/TMatrices/libtmatrices.la"
 
 AM_CONDITIONAL([BUILD_INEXACT], [test $use_inexact = yes])
 if test $use_inexact = yes; then
@@ -377,8 +388,7 @@ fi
 AM_CONDITIONAL([BUILD_LINEARSOLVERLOADER],[test $use_linearsolverloader = yes])
 
 AC_LANG_PUSH(C)
-AC_CHECK_HEADER([windows.h])
-AC_CHECK_HEADER([dlfcn.h])
+AC_CHECK_HEADER([windows.h],AC_DEFINE(HAVE_WINDOWS_H,[1],[Define to 1 if windows.h is available.]))
 AC_CHECK_LIB(dl,[dlopen],[IPOPTLIB_LFLAGS="$IPOPTLIB_LFLAGS -ldl"],[])
 AC_CHECK_FUNCS([snprintf _snprintf],[break])
 AC_CHECK_FUNCS([vsnprintf _vsnprintf],[break])
@@ -515,6 +525,7 @@ AC_CONFIG_FILES([Makefile
 		 src/Algorithm/LinearSolvers/Makefile
 		 src/Algorithm/Inexact/Makefile
 		 src/contrib/CGPenalty/Makefile
+         src/contrib/L1ExactPenaltyResto/Makefile
 		 src/contrib/LinearSolverLoader/Makefile
 		 src/Apps/Makefile
 		 src/Apps/AmplSolver/Makefile
@@ -523,6 +534,7 @@ AC_CONFIG_FILES([Makefile
 		 ipopt.pc
 		 doc/Doxyfile
 		 examples/Cpp_example/Makefile
+		 examples/recursive_nlp/Makefile
 		 examples/hs071_cpp/Makefile
 		 examples/hs071_c/Makefile
 		 examples/ScalableProblems/Makefile

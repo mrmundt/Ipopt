@@ -78,8 +78,6 @@ libipoptalg_la_SOURCES = \
 	IpUserScaling.cpp \
 	IpWarmStartIterateInitializer.cpp
 
-#libipoptalg_la_LDFLAGS = $(LT_LDFLAGS)
-
 AM_CPPFLAGS = \
 	-I$(srcdir)/../Common \
 	-I$(srcdir)/../LinAlg \
@@ -87,5 +85,6 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/../Interfaces \
 	-I$(srcdir)/LinearSolvers \
 	-I$(srcdir)/../contrib/CGPenalty \
+	-I$(srcdir)/../contrib/L1ExactPenaltyResto \
 	-I$(srcdir)/../contrib/LinearSolverLoader \
 	$(IPOPTLIB_CFLAGS)

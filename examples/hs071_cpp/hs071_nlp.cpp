@@ -358,6 +358,11 @@ void HS071_NLP::finalize_solution(
    {
       std::cout << "z_U[" << i << "] = " << z_U[i] << std::endl;
    }
+    std::cout << std::endl << std::endl << "Solution of the constraint multipliers, lambda" << std::endl;
+   for( Index i = 0; i < m; i++)
+   {
+       std::cout << "lambda[" << i << "] = " << lambda[i] << std::endl;
+   }
 
    std::cout << std::endl << std::endl << "Objective value" << std::endl;
    std::cout << "f(x*) = " << obj_value << std::endl;

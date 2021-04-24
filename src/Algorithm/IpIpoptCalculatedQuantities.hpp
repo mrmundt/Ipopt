@@ -126,7 +126,7 @@ public:
     *
     *  The parameters are taken from the OptionsList object.
     */
-   bool Initialize(
+   virtual bool Initialize(
       const Journalist&  jnlst,
       const OptionsList& options,
       const std::string& prefix
@@ -167,9 +167,9 @@ public:
    /** Unscaled value of the objective function (at the trial point) */
    virtual Number unscaled_trial_f();
    /** Gradient of objective function (at current point) */
-   SmartPtr<const Vector> curr_grad_f();
+   virtual SmartPtr<const Vector> curr_grad_f();
    /** Gradient of objective function (at trial point) */
-   SmartPtr<const Vector> trial_grad_f();
+   virtual SmartPtr<const Vector> trial_grad_f();
    //@}
 
    /** @name Barrier Objective Function */
@@ -186,16 +186,16 @@ public:
    /** Gradient of barrier objective function with respect to x
     * (at current point with current mu)
     */
-   SmartPtr<const Vector> curr_grad_barrier_obj_x();
+   virtual SmartPtr<const Vector> curr_grad_barrier_obj_x();
    /** Gradient of barrier objective function with respect to s
     * (at current point with current mu)
     */
-   SmartPtr<const Vector> curr_grad_barrier_obj_s();
+   virtual SmartPtr<const Vector> curr_grad_barrier_obj_s();
 
    /** Gradient of the damping term with respect to x (times kappa_d) */
-   SmartPtr<const Vector> grad_kappa_times_damping_x();
+   virtual SmartPtr<const Vector> grad_kappa_times_damping_x();
    /** Gradient of the damping term with respect to s (times kappa_d) */
-   SmartPtr<const Vector> grad_kappa_times_damping_s();
+   virtual SmartPtr<const Vector> grad_kappa_times_damping_s();
    //@}
 
    /** @name Constraints */
@@ -318,27 +318,27 @@ public:
    /** @name Hessian matrices */
    //@{
    /** exact Hessian at current iterate (uncached) */
-   SmartPtr<const SymMatrix> curr_exact_hessian();
+   virtual SmartPtr<const SymMatrix> curr_exact_hessian();
    //@}
 
    /** @name primal-dual error and its components */
    //@{
    /** x-part of gradient of Lagrangian function (at current point) */
-   SmartPtr<const Vector> curr_grad_lag_x();
+   virtual SmartPtr<const Vector> curr_grad_lag_x();
    /** x-part of gradient of Lagrangian function (at trial point) */
-   SmartPtr<const Vector> trial_grad_lag_x();
+   virtual SmartPtr<const Vector> trial_grad_lag_x();
    /** s-part of gradient of Lagrangian function (at current point) */
-   SmartPtr<const Vector> curr_grad_lag_s();
+   virtual SmartPtr<const Vector> curr_grad_lag_s();
    /** s-part of gradient of Lagrangian function (at trial point) */
-   SmartPtr<const Vector> trial_grad_lag_s();
+   virtual SmartPtr<const Vector> trial_grad_lag_s();
    /** x-part of gradient of Lagrangian function (at current point)
     * including linear damping term
     */
-   SmartPtr<const Vector> curr_grad_lag_with_damping_x();
+   virtual SmartPtr<const Vector> curr_grad_lag_with_damping_x();
    /** s-part of gradient of Lagrangian function (at current point)
     * including linear damping term
     */
-   SmartPtr<const Vector> curr_grad_lag_with_damping_s();
+   virtual SmartPtr<const Vector> curr_grad_lag_with_damping_s();
    /** Complementarity for x_L (for current iterate) */
    SmartPtr<const Vector> curr_compl_x_L();
    /** Complementarity for x_U (for current iterate) */

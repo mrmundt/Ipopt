@@ -33,6 +33,9 @@ int main(
    app->Options()->SetNumericValue("tol", 1e-7);
    app->Options()->SetStringValue("mu_strategy", "adaptive");
    app->Options()->SetStringValue("output_file", "ipopt.out");
+   app->Options()->SetStringValue("start_with_resto", "yes");
+   //app->Options()->SetStringValue("restoration_method", "l1");
+   //app->Options()->SetStringValue("l1_objective_type", "objective_inv");
    // The following overwrites the default name (ipopt.opt) of the options file
    // app->Options()->SetStringValue("option_file_name", "hs071.opt");
 

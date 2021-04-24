@@ -351,6 +351,12 @@ private:
    );
    //@}
 
+    void BuildRestoration(
+           const Journalist&     jnlst,
+           const OptionsList&    options,
+           const std::string&    prefix
+            );
+
    /** @name IpoptAlgorithm constructor arguments.
     *  These components are built in separate Build
     *  methods in the order defined by BuildBasicAlgorithm.

@@ -17,6 +17,7 @@
 #include "IpInterfacesRegOp.hpp"
 #include "IpAlgorithmRegOp.hpp"
 #include "IpCGPenaltyRegOp.hpp"
+#include "IpL1ExactPenaltyRestoRegOp.hpp"
 #include "IpNLPBoundsRemover.hpp"
 
 #ifdef IPOPT_HAS_HSL
@@ -42,6 +43,8 @@ namespace Ipopt
 {
 #if IPOPT_VERBOSITY > 0
 static const Index dbg_verbosity = 0;
+// Kluge: Add reference counter for DebugJournalistWrapper::jrnl
+static SmartPtr<Journalist> smart_jnlst(NULL);
 #endif
 
 IpoptApplication::IpoptApplication(
@@ -63,9 +66,16 @@ IpoptApplication::IpoptApplication(
    try
    {
 # if IPOPT_VERBOSITY > 0
-      DebugJournalistWrapper::SetJournalist(GetRawPtr(jnlst_));
-      SmartPtr<Journal> debug_jrnl = jnlst_->AddFileJournal("Debug", "debug.out", J_ITERSUMMARY);
-      debug_jrnl->SetPrintLevel(J_DBG, J_ALL);
+      // Kludge: If this is the first IpoptApplication, then store jnlst_ in smart_jnlst, too, so that it doesn't
+      // get freed when the IpoptApplication is freed and DebugJournalistWrapper::jrnl becomes a dangling pointer.
+      // Also add the Debug journal that writes to debug.out.
+      if( IsNull(smart_jnlst) )
+      {
+         smart_jnlst = jnlst_;
+         DebugJournalistWrapper::SetJournalist(GetRawPtr(jnlst_));
+         SmartPtr<Journal> debug_jrnl = jnlst_->AddFileJournal("Debug", "debug.out", J_ITERSUMMARY);
+         debug_jrnl->SetPrintLevel(J_DBG, J_ALL);
+      }
 # endif
 
       DBG_START_METH("IpoptApplication::IpoptApplication()",
@@ -180,13 +190,15 @@ ApplicationReturnStatus IpoptApplication::Initialize(
          {
             debug_print_level = print_level;
          }
-         SmartPtr<Journal> debug_jrnl = jnlst_->GetJournal("Debug");
-         if (IsNull(debug_jrnl))
-         {
-            debug_jrnl = jnlst_->AddFileJournal("Debug", "debug.out", J_ITERSUMMARY);
-         }
+         assert(IsValid(smart_jnlst));  /* should have been created in constructor */
+         SmartPtr<Journal> debug_jrnl = smart_jnlst->GetJournal("Debug");
+         assert(IsValid(debug_jrnl));  /* should have been added in constructor */
          debug_jrnl->SetAllPrintLevels(debug_print_level);
          debug_jrnl->SetPrintLevel(J_DBG, J_ALL);
+         if( IsNull(jnlst_->GetJournal("Debug")) )
+         {
+            jnlst_->AddJournal(debug_jrnl);
+         }
 #endif
 
          // Open an output file if required
@@ -457,7 +469,7 @@ ApplicationReturnStatus IpoptApplication::Initialize(
             //options_to_print.push_back("pardiso_out_of_core_power");
 #endif
 
-#ifdef HAVE_WSMP
+#ifdef IPOPT_HAS_WSMP
 
             options_to_print.push_back("#WSMP Linear Solver");
             options_to_print.push_back("wsmp_num_threads");
@@ -497,7 +509,7 @@ ApplicationReturnStatus IpoptApplication::Initialize(
             categories.push_back("MA27 Linear Solver");
             categories.push_back("MA57 Linear Solver");
             categories.push_back("Pardiso Linear Solver");
-#ifdef HAVE_WSMP
+#ifdef IPOPT_HAS_WSMP
 
             categories.push_back("WSMP Linear Solver");
 #endif
@@ -1228,7 +1240,9 @@ void IpoptApplication::RegisterAllIpoptOptions(
    RegisterOptions_Interfaces(roptions);
    RegisterOptions_Algorithm(roptions);
    RegisterOptions_CGPenalty(roptions);
+   RegisterOptions_L1ExactPenaltyResto(roptions); // @dthierry New!
    RegisterOptions_LinearSolvers(roptions);
+
 #ifdef BUILD_INEXACT
    RegisterOptions_Inexact(roptions);
 #endif

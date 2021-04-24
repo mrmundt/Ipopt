@@ -4,12 +4,12 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@/coin-or
 
-Name: IPOPT
+Name: @PACKAGE_NAME@
 Description: Interior Point Optimizer
-URL: https://github.com/coin-or/Ipopt
+URL: @PACKAGE_URL@
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lipopt
-Libs.private: @IPOPTLIB_LFLAGS_NOPC@
 Cflags: -I${includedir}
-Requires:
-Requires.private: @IPOPTLIB_PCFILES@
+@COIN_STATIC_BUILD_FALSE@Libs: -L${libdir} -lipopt
+@COIN_STATIC_BUILD_FALSE@Requires.private: @IPOPTLIB_PCFILES@
+@COIN_STATIC_BUILD_TRUE@Libs: -L${libdir} -lipopt @IPOPTLIB_LFLAGS_NOPC@
+@COIN_STATIC_BUILD_TRUE@Requires: @IPOPTLIB_PCFILES@

@@ -292,7 +292,7 @@ public:
    /** Accessor Method for obtaining the Rho penalization factor for
     *  the ell_1 norm.
     */
-   Number Rho() const
+   virtual Number Rho() const
    {
       return rho_;
    }
