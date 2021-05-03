@@ -149,6 +149,13 @@
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case). */
+#undef IPOPT_HSL_FUNC
+
+/* As IPOPT_HSL_FUNC, but for C identifiers containing underscores. */
+#undef IPOPT_HSL_FUNC_
+
+/* Define to a macro mangling the given C identifier (in lower and upper
+   case). */
 #undef IPOPT_LAPACK_FUNC
 
 /* As IPOPT_LAPACK_FUNC, but for C identifiers containing underscores. */
