@@ -19,7 +19,7 @@ install:
   - IF %ARCH%==win64-msvc14 (CALL C:\"Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64)
   - IF %ARCH%==win64-msvc15 (CALL C:\"Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 8.1)
   - IF %ARCH%==win64-msvc16 (CALL C:\"Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 8.1)
-  - IF %ARCH%==win64-mingw (CALL C:\msys64\usr\bin\bash -lc "pacman -S mingw-w64-x86_64-lapack mingw-w64-x86_64-metis --noconfirm")
+  - IF %ARCH%==win64-mingw (CALL C:\msys64\usr\bin\bash -lc "pacman -S mingw-w64-x86_64-lapack mingw-w64-x86_64-metis mingw-w64-x86_64-gcc-fortran --noconfirm")
   - IF %ARCH%==win64-mingw (CALL C:\msys64\usr\bin\bash -lc "PATH=/mingw64/bin:$PATH ; gcc --version; g++ --version; gfortran --version; pkg-config --libs lapack ; echo PATH=$PATH")
 
 build_script:
