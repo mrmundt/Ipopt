@@ -50,7 +50,14 @@ void LibraryLoader::loadLibrary()
    }
 
 #ifdef HAVE_WINDOWS_H
-   libhandle = (void*)LoadLibraryExA(libname.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+   /* if absolute path, then use LoadLibraryExA with LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR to find
+    * dependencies of library in same directory
+    * otherwise, use standard search paths (which includes PATH)
+    */
+   if( libname.length() > 2 && libname[1] == ':' )
+      libhandle = (void*)LoadLibraryExA(libname.c_str(), NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+   else
+      libhandle = (void*)LoadLibraryA(libname.c_str());
 
    if( libhandle == NULL )
    {
