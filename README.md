@@ -123,7 +123,7 @@ Getting Help
  * **[Discussions](https://github.com/coin-or/Ipopt/discussions)**: ask questions, share ideas, engage with the Ipopt community
  * **[Mailing list archive](http://list.coin-or.org/pipermail/ipopt/)** (2002-2020): predecessor of Discussions
  * External resources:
-   * [short Ipopt tutorial](http://drops.dagstuhl.de/volltexte/2009/2089/pdf/09061.WaechterAndreas.Paper.2089.pdf)
+   * [short Ipopt tutorial](https://doi.org/10.4230/DagSemProc.09061.16)
 
 Please Cite Us
 --------------
