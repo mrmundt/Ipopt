@@ -169,6 +169,11 @@ void AmplTNLP::gutsOfConstructor(
          THROW_EXCEPTION(INVALID_TNLP, "Unknown error in stub file read");
       }
    }
+
+   if( checkinterrupt_ && !RegisterInterruptHandler(NULL, &interrupted_) )
+   {
+      jnlst_->Printf(J_STRONGWARNING, J_MAIN, "Could not register handler for interrupt signals.\n");
+   }
 }
 
 AmplTNLP::AmplTNLP(
@@ -182,7 +187,8 @@ AmplTNLP::AmplTNLP(
    const char*                       ampl_option_string /* = NULL */,
    const char*                       ampl_invokation_string /* = NULL */,
    const char*                       ampl_banner_string /* = NULL */,
-   std::string*                      nl_file_content /* = NULL */
+   std::string*                      nl_file_content /* = NULL */,
+   bool                              checkinterrupt /* = false */
 )
    : TNLP(),
      jnlst_(jnlst),
@@ -200,7 +206,9 @@ AmplTNLP::AmplTNLP(
      hesset_called_(false),
      set_active_objective_called_(false),
      Oinfo_ptr_(NULL),
-     suffix_handler_(suffix_handler)
+     suffix_handler_(suffix_handler),
+     checkinterrupt_(checkinterrupt),
+     interrupted_(false)
 {
    DBG_START_METH("AmplTNLP::AmplTNLP", dbg_verbosity);
 
@@ -236,7 +244,9 @@ AmplTNLP::AmplTNLP(
      hesset_called_(false),
      set_active_objective_called_(false),
      Oinfo_ptr_(NULL),
-     suffix_handler_(suffix_handler)
+     suffix_handler_(suffix_handler),
+     checkinterrupt_(false),
+     interrupted_(false)
 {
    DBG_START_METH("AmplTNLP::AmplTNLP", dbg_verbosity);
 
@@ -356,6 +366,11 @@ AmplTNLP::~AmplTNLP()
    }
 
    delete (fint*) nerror_;
+
+   if( checkinterrupt_ && !UnregisterInterruptHandler() )
+   {
+      jnlst_->Printf(J_STRONGWARNING, J_MAIN, "Failed to unregister handler for interrupt signals.\n");
+   }
 }
 
 bool AmplTNLP::get_nlp_info(
@@ -761,6 +776,26 @@ bool AmplTNLP::eval_h(
    }
 
    return false;
+}
+
+bool AmplTNLP::intermediate_callback(
+   AlgorithmMode              /*mode*/,
+   Index                      /*iter*/,
+   Number                     /*obj_value*/,
+   Number                     /*inf_pr*/,
+   Number                     /*inf_du*/,
+   Number                     /*mu*/,
+   Number                     /*d_norm*/,
+   Number                     /*regularization_size*/,
+   Number                     /*alpha_du*/,
+   Number                     /*alpha_pr*/,
+   Index                      /*ls_trials*/,
+   const IpoptData*           /*ip_data*/,
+   IpoptCalculatedQuantities* /*ip_cq*/
+)
+{
+   /* returning false makes Ipopt stop */
+   return !interrupted_;
 }
 
 void AmplTNLP::finalize_solution(

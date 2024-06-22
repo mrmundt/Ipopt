@@ -332,7 +332,8 @@ public:
       const char*                       ampl_option_string = NULL,
       const char*                       ampl_invokation_string = NULL,
       const char*                       ampl_banner_string = NULL,
-      std::string*                      nl_file_content = NULL
+      std::string*                      nl_file_content = NULL,
+      bool                              checkinterrupt = false         ///< @since 3.14.17
    );
 
    /** Constructor without RegisteredOptions.
@@ -468,6 +469,22 @@ public:
 
    /** @name Solution Methods */
    ///@{
+   virtual bool intermediate_callback(
+      AlgorithmMode              mode,
+      Index                      iter,
+      Number                     obj_value,
+      Number                     inf_pr,
+      Number                     inf_du,
+      Number                     mu,
+      Number                     d_norm,
+      Number                     regularization_size,
+      Number                     alpha_du,
+      Number                     alpha_pr,
+      Index                      ls_trials,
+      const IpoptData*           ip_data,
+      IpoptCalculatedQuantities* ip_cq
+   );
+
    virtual void finalize_solution(
       SolverReturn               status,
       Index                      n,
@@ -686,6 +703,11 @@ protected:
 
    /** Suffix Handler */
    SmartPtr<AmplSuffixHandler> suffix_handler_;
+
+   /** whether to register handler for interrupt signals */
+   bool checkinterrupt_;
+   /** pointer to flag to check whether to interrupt signal was set */
+   bool interrupted_;
 
    /** Make the objective call to ampl */
    bool internal_objval(
