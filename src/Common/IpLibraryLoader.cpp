@@ -53,7 +53,9 @@ void LibraryLoader::loadLibrary()
    libhandle = (void*)LoadLibraryA(libname.c_str());
 
    if( libhandle != NULL )
+   {
       return;
+   }
 
    std::stringstream s;
    s << "Error " << GetLastError() << " while loading DLL " << libname << " via LoadLibraryA: ";
@@ -65,7 +67,9 @@ void LibraryLoader::loadLibrary()
    libhandle = (void*)LoadLibraryExA(libname.c_str(), NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
    if( libhandle != NULL )
+   {
       return;
+   }
 
    /* skip message if LoadLibraryExA failed with invalid parameter error
     * do not confuse user just because we were too lazy to check what kind of path libname is
