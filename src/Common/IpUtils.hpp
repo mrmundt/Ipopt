@@ -109,8 +109,9 @@ IPOPTLIB_EXPORT Number WallclockTime();
  * @since 3.14.17
  */
 IPOPTLIB_EXPORT bool RegisterInterruptHandler(
-   void (*handle_interrupt)(void),  /**< function to call when interrupted by signal, if not NULL */
-   bool* interrupt_flag             /**< variable to set to true when interrupted by signal, if not NULL */
+   void        (*handle_interrupt)(void),                              /**< function to call when interrupted by signal, if not NULL */
+   bool*         interrupt_flag,                                       /**< variable to set to true when interrupted by signal, if not NULL */
+   unsigned int  abortlimit = std::numeric_limits<unsigned int>::max() /**< if interrupt signal has been send this many times, then exit(1) */
 );
 
 /** unregister previously registered handler for interrupt signals

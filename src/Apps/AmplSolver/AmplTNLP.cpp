@@ -170,7 +170,7 @@ void AmplTNLP::gutsOfConstructor(
       }
    }
 
-   if( checkinterrupt_ && !RegisterInterruptHandler(NULL, &interrupted_) )
+   if( checkinterrupt_ && !RegisterInterruptHandler(NULL, &interrupted_, 5) )
    {
       jnlst_->Printf(J_STRONGWARNING, J_MAIN, "Could not register handler for interrupt signals.\n");
    }

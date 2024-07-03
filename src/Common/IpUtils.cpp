@@ -194,6 +194,7 @@ Number WallclockTime()
 }
 
 static bool registered_handler = false;
+static unsigned int abortcountdown_ = std::numeric_limits<unsigned int>::max();
 static void (*handle_interrupt_)(void) = NULL;
 static bool* interrupt_flag_ = NULL;
 
@@ -210,19 +211,18 @@ static void sighandler(
    {
       (*handle_interrupt_)();
    }
+
+   if( --abortcountdown_ == 0 )
+   {
+      fputs("Ipopt sighandler: Too many interrupt signals. Forcing termination.\n", stderr);
+      exit(1);
+   }
 }
 
-/** register handler for interrupt signals
- *
- * On POSIX systems, catches SIGHUP and SIGINT signals.
- * On Windows, catches SIGTERM, SIGABRT, SIGBREAK, and SIGINT signals.
- *
- * @return whether registering the handler was successful
- * @since 3.14.17
- */
 bool RegisterInterruptHandler(
-   void (*handle_interrupt)(void),  /**< function to call when interrupted by signal, if not NULL */
-   bool* interrupt_flag             /**< variable to set to true when interrupted by signal, if not NULL */
+   void        (*handle_interrupt)(void),
+   bool*         interrupt_flag,
+   unsigned int  abortlimit
 )
 {
    if( registered_handler )
@@ -230,6 +230,7 @@ bool RegisterInterruptHandler(
       return false;
    }
    registered_handler = true;
+   abortcountdown_ = abortlimit;
 
    handle_interrupt_ = handle_interrupt;
    interrupt_flag_ = interrupt_flag;
@@ -260,11 +261,6 @@ bool RegisterInterruptHandler(
    return true;
 }
 
-/** unregister previously registered handler for interrupt signals
- *
- * @return whether registering the handler was successful
- * @since 3.14.17
- */
 bool UnregisterInterruptHandler(void)
 {
    if( !registered_handler )
