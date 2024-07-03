@@ -33,13 +33,14 @@ SensAmplTNLP::SensAmplTNLP(
    const char*                       ampl_option_string /* = NULL */,
    const char*                       ampl_invokation_string /* = NULL */,
    const char*                       ampl_banner_string /* = NULL */,
-   std::string*                      nl_file_content /* = NULL */
+   std::string*                      nl_file_content /* = NULL */,
+   bool                              checkinterrupt /* = false */
 )
    : AmplTNLP(
         jnlst, // gotta call constructor of base class properly
         regoptions, options, argv, suffix_handler /* = NULL */, allow_discrete /* = false */, ampl_options_list /* = NULL */,
         ampl_option_string /* = NULL */, ampl_invokation_string /* = NULL */, ampl_banner_string /* = NULL */,
-        nl_file_content /* = NULL */),
+        nl_file_content /* = NULL */, checkinterrupt /* = false */),
      jnlst_(jnlst),
      options_(options),
      have_parameters_(false),

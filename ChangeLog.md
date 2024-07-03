@@ -13,8 +13,8 @@ More detailed information about incremental changes can be found in the
   to `IpUtils.hpp` to wrap handling of interrupt signals.
   Added parameter `checkinterrupt` (default false) to `AmplTNLP` constructor
   to enable check for interrupt signal in `intermediate_callback`.
-- The `ipopt` executable can now be interrupted by SIGINT/SIGHUP (POSIX systems) or
-  SIGINT/SIGTERM/SIGABRT (Windows systems).
+- The `ipopt` and `ipopt_sens` executables can now be interrupted by SIGINT/SIGHUP
+  (POSIX systems) or SIGINT/SIGTERM/SIGABRT (Windows systems).
 
 ### 3.14.16 (2024-04-22)
 

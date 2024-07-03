@@ -124,7 +124,7 @@ int main(
 
    // create AmplSensTNLP from argc.
    SmartPtr<TNLP> sens_tnlp = new SensAmplTNLP(ConstPtr(app_ipopt->Jnlst()), app_ipopt->RegOptions(), app_ipopt->Options(), argv, suffix_handler,
-      false, ampl_options_list);
+      false, ampl_options_list, NULL, NULL, NULL, NULL, true);
 
    app_sens->Initialize();
 

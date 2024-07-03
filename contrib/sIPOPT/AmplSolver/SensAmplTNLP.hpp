@@ -55,7 +55,8 @@ public:
       const char*                        ampl_option_string = NULL,
       const char*                        ampl_invokation_string = NULL,
       const char*                        ampl_banner_string = NULL,
-      std::string*                       nl_file_content = NULL
+      std::string*                       nl_file_content = NULL,
+      bool                               checkinterrupt = false
    );
 
    virtual ~SensAmplTNLP();
