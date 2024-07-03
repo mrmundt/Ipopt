@@ -100,6 +100,26 @@ IPOPTLIB_EXPORT Number SysTime();
 /** method determining wallclock time since first call */
 IPOPTLIB_EXPORT Number WallclockTime();
 
+/** register handler for interrupt signals
+ *
+ * On POSIX systems, catches SIGHUP and SIGINT signals.
+ * On Windows, catches SIGTERM, SIGABRT, SIGBREAK, and SIGINT signals.
+ *
+ * @return whether registering the handler was successful
+ * @since 3.14.17
+ */
+IPOPTLIB_EXPORT bool RegisterInterruptHandler(
+   void (*handle_interrupt)(void),  /**< function to call when interrupted by signal, if not NULL */
+   bool* interrupt_flag             /**< variable to set to true when interrupted by signal, if not NULL */
+);
+
+/** unregister previously registered handler for interrupt signals
+ *
+ * @return whether registering the handler was successful
+ * @since 3.14.17
+ */
+IPOPTLIB_EXPORT bool UnregisterInterruptHandler(void);
+
 /** Method for comparing two numbers within machine precision.
  *
  *  @return true, if lhs is less or equal the rhs, relaxing

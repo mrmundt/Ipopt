@@ -16,6 +16,7 @@
 #include <ctime>
 #include <cstdio>
 #include <cstdarg>
+#include <csignal>
 #include <limits>
 
 // The special treatment of vsnprintf on SUN has been suggested by Lou Hafer 2010/07/04
@@ -190,6 +191,113 @@ Number WallclockTime()
       Wallclock_firstCall_ = callTime;
    }
    return callTime - Wallclock_firstCall_;
+}
+
+static bool registered_handler = false;
+static void (*handle_interrupt_)(void) = NULL;
+static bool* interrupt_flag_ = NULL;
+
+static void sighandler(
+   int /* signum */
+)
+{
+   if( interrupt_flag_ != NULL )
+   {
+      *interrupt_flag_ = true;
+   }
+
+   if( handle_interrupt_ != NULL )
+   {
+      (*handle_interrupt_)();
+   }
+}
+
+/** register handler for interrupt signals
+ *
+ * On POSIX systems, catches SIGHUP and SIGINT signals.
+ * On Windows, catches SIGTERM, SIGABRT, SIGBREAK, and SIGINT signals.
+ *
+ * @return whether registering the handler was successful
+ * @since 3.14.17
+ */
+bool RegisterInterruptHandler(
+   void (*handle_interrupt)(void),  /**< function to call when interrupted by signal, if not NULL */
+   bool* interrupt_flag             /**< variable to set to true when interrupted by signal, if not NULL */
+)
+{
+   if( registered_handler )
+   {
+      return false;
+   }
+   registered_handler = true;
+
+   handle_interrupt_ = handle_interrupt;
+   interrupt_flag_ = interrupt_flag;
+
+#ifdef _POSIX_C_SOURCE
+   struct sigaction sa;
+   sa.sa_handler = &sighandler;
+   sa.sa_flags = SA_RESTART;
+   sigfillset(&sa.sa_mask);
+   if( sigaction(SIGINT, &sa, NULL) == -1 )
+   {
+      return false;
+   }
+   if( sigaction(SIGHUP, &sa, NULL) == -1 )
+   {
+      return false;
+   }
+
+#elif defined(_WIN32)
+   signal(SIGINT, sighandler);
+   signal(SIGTERM, sighandler);
+   signal(SIGABRT, sighandler);
+
+#else
+   return false;
+#endif
+
+   return true;
+}
+
+/** unregister previously registered handler for interrupt signals
+ *
+ * @return whether registering the handler was successful
+ * @since 3.14.17
+ */
+bool UnregisterInterruptHandler(void)
+{
+   if( !registered_handler )
+   {
+      return false;
+   }
+
+#ifdef _POSIX_C_SOURCE
+   struct sigaction sa;
+   sa.sa_handler = SIG_DFL;
+   sa.sa_flags = SA_RESTART;
+   sigfillset(&sa.sa_mask);
+   if( sigaction(SIGINT, &sa, NULL) == -1 )
+   {
+      return false;
+   }
+   if( sigaction(SIGHUP, &sa, NULL) == -1 )
+   {
+      return false;
+   }
+
+#elif defined(_WIN32)
+   signal(SIGINT, SIG_DFL);
+   signal(SIGTERM, SIG_DFL);
+   signal(SIGABRT, SIG_DFL);
+
+#else
+   return false;
+#endif
+
+   registered_handler = false;
+
+   return true;
 }
 
 bool Compare_le(
