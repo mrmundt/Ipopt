@@ -322,18 +322,18 @@ public:
     * @since 3.14.0
     */
    AmplTNLP(
-      const SmartPtr<const Journalist>& jnlst,
-      const SmartPtr<RegisteredOptions> regoptions,
-      const SmartPtr<OptionsList>       options,
-      const char* const*                argv,
-      SmartPtr<AmplSuffixHandler>       suffix_handler = NULL,
-      bool                              allow_discrete = false,
-      SmartPtr<AmplOptionsList>         ampl_options_list = NULL,
-      const char*                       ampl_option_string = NULL,
-      const char*                       ampl_invokation_string = NULL,
-      const char*                       ampl_banner_string = NULL,
-      std::string*                      nl_file_content = NULL,
-      bool                              checkinterrupt = false         ///< @since 3.14.17
+      const SmartPtr<const Journalist>& jnlst,                         ///< Journalist
+      const SmartPtr<RegisteredOptions> regoptions,                    ///< Options handler
+      const SmartPtr<OptionsList>       options,                       ///< Options
+      const char* const*                argv,                          ///< command line arguments with .nl file
+      SmartPtr<AmplSuffixHandler>       suffix_handler = NULL,         ///< optional suffix handler
+      bool                              allow_discrete = false,        ///< whether to print warning when discrete variables appear
+      SmartPtr<AmplOptionsList>         ampl_options_list = NULL,      ///< AMPL options list
+      const char*                       ampl_option_string = NULL,     ///< AMPL options strings
+      const char*                       ampl_invokation_string = NULL, ///< AMPL invokation string
+      const char*                       ampl_banner_string = NULL,     ///< AMPL banner
+      std::string*                      nl_file_content = NULL,        ///< alternative .nl input
+      bool                              checkinterrupt = false         ///< whether to check for interrupt signals @since 3.14.17
    );
 
    /** Constructor without RegisteredOptions.
