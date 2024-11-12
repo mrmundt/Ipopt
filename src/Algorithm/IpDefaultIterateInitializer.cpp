@@ -182,7 +182,7 @@ bool DefaultIterateInitializer::SetInitialIterates()
 
    // Get the starting values provided by the NLP and store them
    // in the ip_data current fields.  The following line only requests
-   // intial values for the primal variables x, but later we might
+   // initial values for the primal variables x, but later we might
    // make this more flexible based on user options.
 
    /////////////////////////////////////////////////////////////////////
@@ -208,7 +208,7 @@ bool DefaultIterateInitializer::SetInitialIterates()
       if( retval )
       {
          Jnlst().Printf(J_DETAILED, J_INITIALIZATION,
-                        "Least square intial values for x and s computed.\n");
+                        "Least square initial values for x and s computed.\n");
          x_ls->Print(Jnlst(), J_VECTOR, J_INITIALIZATION, "x_ls");
          s_ls->Print(Jnlst(), J_VECTOR, J_INITIALIZATION, "s_ls");
          iterates->Set_x(*x_ls);
@@ -316,7 +316,7 @@ bool DefaultIterateInitializer::SetInitialIterates()
          IpData().set_trial(iterates);
 
          Jnlst().Printf(J_DETAILED, J_INITIALIZATION,
-                        "Least square intial values for z_L, z_U,v_L, v_U, y_c, y_d computed.\n");
+                        "Least square initial values for z_L, z_U,v_L, v_U, y_c, y_d computed.\n");
          zL_new->Print(Jnlst(), J_VECTOR, J_INITIALIZATION, "zL_new");
          zU_new->Print(Jnlst(), J_VECTOR, J_INITIALIZATION, "zU_new");
          vL_new->Print(Jnlst(), J_VECTOR, J_INITIALIZATION, "vL_new");

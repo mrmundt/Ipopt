@@ -227,7 +227,7 @@ ESymSolverStatus GenAugSystemSolver::MultiSolve(
    else if( retval == SYMSOLVER_FATAL_ERROR )
    {
       delete[] rhssol;
-      THROW_EXCEPTION(FATAL_ERROR_IN_LINEAR_SOLVER, "A fatal error occured in the linear solver.");
+      THROW_EXCEPTION(FATAL_ERROR_IN_LINEAR_SOLVER, "A fatal error occurred in the linear solver.");
    }
    else
    {

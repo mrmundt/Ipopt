@@ -273,13 +273,13 @@ SensAlgorithmExitStatus SensApplication::Run()
       if( compute_red_hessian_ && redhess_internal_abort )
       {
          jnlst_->Printf(J_WARNING, J_MAIN, "\nReduced hessian was not computed "
-                        "because an error occured.\n"
+                        "because an error occurred.\n"
                         "See exception message above for details.\n\n");
       }
       if( run_sens_ && sens_internal_abort )
       {
          jnlst_->Printf(J_WARNING, J_MAIN, "\nsIPOPT was not called "
-                        "because an error occured.\n"
+                        "because an error occurred.\n"
                         "See exception message above for details.\n\n");
       }
 

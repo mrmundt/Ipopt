@@ -767,7 +767,7 @@ ESymSolverStatus IterativePardisoSolverInterface::Solve(
          DPARM_[5] *= decr_factor_;
          Jnlst().Printf(J_WARNING, J_LINEAR_ALGEBRA,
                         "                               to DPARM_[ 4] = %e and DPARM_[ 5] = %e\n", DPARM_[4], DPARM_[5]);
-         // Copy solution back to y to get intial values for the next iteration
+         // Copy solution back to y to get initial values for the next iteration
          attempts++;
          ERROR = 0;
       }

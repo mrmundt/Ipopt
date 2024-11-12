@@ -49,7 +49,7 @@ void InexactLSAcceptor::RegisterOptions(
       0.0, true,
       1e-6,
       "This is the initial value for the lower penalty parameter in the Curtis/Nocedal flexible penalty function line search procedure. "
-      "This must be smaller or equal to the intial value of the upper penalty parameter, see option \"nu_init\".");
+      "This must be smaller or equal to the initial value of the upper penalty parameter, see option \"nu_init\".");
    roptions->AddLowerBoundedNumberOption(
       "nu_low_fact",
       "Factor in update rule for nu_low in flexible penalty function.",

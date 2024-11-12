@@ -190,7 +190,7 @@ bool WarmStartIterateInitializer::SetInitialIterates()
       //                   Initialize primal variables                   //
       /////////////////////////////////////////////////////////////////////
 
-      // Get the intial values for x, y_c, y_d, z_L, z_U,
+      // Get the initial values for x, y_c, y_d, z_L, z_U,
       if( !IpData().InitializeDataStructures(IpNLP(), true, true, true, true, true) )
       {
          return false;

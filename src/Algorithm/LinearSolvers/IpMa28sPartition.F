@@ -71,7 +71,7 @@ CP   IW        W    INT    integer work space
 CP   LRW       I    INT    length of RW (Output for TASK = 0)
 CP   RW        W    R      real work space
 CP   IERR      O    INT    =0: everything OK
-CP                         >0: Error occured; abort optimization
+CP                         >0: Error occurred; abort optimization
 CP                         <0: Warning; message to user
 C
 C*******************************************************************************
