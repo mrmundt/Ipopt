@@ -182,7 +182,7 @@ void MumpsSolverInterface::RegisterOptions(
       "mumps_mpi_communicator",
       "MPI communicator used for matrix operations",
       USE_COMM_WORLD,
-      "This sets the MPI communicator. MPI_COMM_WORLD is the default. Any other value should be the return value from MPI_Comm_c2f");
+      "This sets the MPI communicator. MPI_COMM_WORLD is the default. Any other value should be the return value from MPI_Comm_c2f", true);
 }
 
 /// give name of MUMPS with version info
