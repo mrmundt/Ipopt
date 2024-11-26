@@ -98,12 +98,6 @@ MumpsSolverInterface::MumpsSolverInterface()
    mumps_->par = 1; //working host for sequential version
    mumps_->sym = 2; //general symmetric matrix
 
-#ifndef IPOPT_MUMPS_NOMUTEX
-   const std::lock_guard<std::mutex> lock(mumps_call_mutex);
-#endif
-
-   mumps_->icntl[2] = 0;  // global info stream
-   mumps_->icntl[3] = 0;  // print level
    mumps_ptr_ = (void*) mumps_;
 }
 
@@ -222,13 +216,13 @@ bool MumpsSolverInterface::InitializeImpl(
 
    MUMPS_STRUC_C* mumps_ = static_cast<MUMPS_STRUC_C*>(mumps_ptr_);
 
-#ifndef IPOPT_MUMPS_NOMUTEX
-   const std::lock_guard<std::mutex> lock(mumps_call_mutex);
-#endif
-
    Index mpi_comm;
    options.GetIntegerValue("mumps_mpi_communicator", mpi_comm, prefix);
    mumps_->comm_fortran = static_cast<int>(mpi_comm);
+
+#ifndef IPOPT_MUMPS_NOMUTEX
+   const std::lock_guard<std::mutex> lock(mumps_call_mutex);
+#endif
 
    mumps_c(mumps_);
 
@@ -249,11 +243,8 @@ bool MumpsSolverInterface::InitializeImpl(
                        "MumpsSolverInterface called with warm_start_same_structure, but the problem is solved for the first time.");
    }
 
-   if( print_level > 0 )
-   {
-      mumps_->icntl[2] = 6;  // global info stream
-      mumps_->icntl[3] = print_level;  // print level
-   }
+   mumps_->icntl[2] = print_level > 0 ? 6 : 0;  // global info stream
+   mumps_->icntl[3] = print_level;  // print level
 
    return true;
 }
