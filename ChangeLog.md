@@ -15,6 +15,8 @@ More detailed information about incremental changes can be found in the
   to enable check for interrupt signal in `intermediate_callback`.
 - The `ipopt` and `ipopt_sens` executables can now be interrupted by SIGINT/SIGHUP
   (POSIX systems) or SIGINT/SIGTERM/SIGABRT (Windows systems).
+- New option `mumps_mpi_communicator` to specify the MPI communicator when using
+  an MPI-enabled build of MUMPS [#790, by Alex Tyler Chapman].
 
 ### 3.14.16 (2024-04-22)
 
