@@ -11,7 +11,7 @@
 
 namespace Ipopt
 {
-#if COIN_IPOPT_VERBOSITY > 0
+#if IPOPT_VERBOSITY > 0
 static const Index dbg_verbosity = 0;
 #endif
 
@@ -114,7 +114,7 @@ bool ProbingMuOracle::CalculateMu(
    DBG_ASSERT(mu_curr > 0.);
 
    // Apply Mehrotra's rule
-   Number sigma = pow((mu_aff / mu_curr), 3);
+   Number sigma = std::pow((mu_aff / mu_curr), 3);
    // Make sure, sigma is not too large
    sigma = Min(sigma, sigma_max_);
 

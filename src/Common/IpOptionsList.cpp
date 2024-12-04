@@ -30,9 +30,8 @@ bool OptionsList::SetStringValue(
       {
          if( IsValid(jnlst_) )
          {
-            std::string msg = "Tried to set Option: " + tag;
-            msg += ". It is not a valid option. Please check the list of available options.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Tried to set Option: %s. It is not a valid option. Please check the list of available options.\n", tag.c_str());
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
          return false;
@@ -57,7 +56,7 @@ bool OptionsList::SetStringValue(
                msg += " Unknown";
             }
             msg += ", not of type String. Please check the documentation for options.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN, "%s", msg.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -68,11 +67,9 @@ bool OptionsList::SetStringValue(
       {
          if( IsValid(jnlst_) )
          {
-            std::string msg = "Setting: \"" + value;
-            msg += "\" is not a valid setting for Option: ";
-            msg += tag;
-            msg += ". Check the option documentation.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Setting: \"%s\" is not a valid setting for Option: %s. Check the option documentation.\n",
+                           value.c_str(), tag.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -90,7 +87,7 @@ bool OptionsList::SetStringValue(
          msg += "         The setting will remain as: \"" + tag;
          msg += " " + options_[lowercase(tag)].GetValue();
          msg += "\"\n";
-         jnlst_->Printf(J_WARNING, J_MAIN, msg.c_str());
+         jnlst_->Printf(J_WARNING, J_MAIN, "%s", msg.c_str());
       }
    }
    else
@@ -107,7 +104,7 @@ bool OptionsList::SetStringValue(
    //     msg += "\" not taken because a value of \n\"" ;
    //     msg += options_[lowercase(tag)].GetValue();
    //     msg += "\" already exists and is set to disallow clobbering.\n\n";
-   //     jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+   //     jnlst_->Printf(J_ERROR, J_MAIN, "%s", msg.c_str());
    //     return false;
 }
 
@@ -129,9 +126,8 @@ bool OptionsList::SetNumericValue(
       {
          if( IsValid(jnlst_) )
          {
-            std::string msg = "Tried to set Option: " + tag;
-            msg += ". It is not a valid option. Please check the list of available options.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Tried to set Option: %s. It is not a valid option. Please check the list of available options.\n", tag.c_str());
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
          return false;
@@ -156,7 +152,7 @@ bool OptionsList::SetNumericValue(
                msg += " Unknown";
             }
             msg += ", not of type Number. Please check the documentation for options.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN, "%s", msg.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -167,12 +163,9 @@ bool OptionsList::SetNumericValue(
       {
          if( IsValid(jnlst_) )
          {
-            std::string msg = "Setting: \"";
-            msg += buffer;
-            msg += "\" is not a valid setting for Option: ";
-            msg += tag;
-            msg += ". Check the option documentation.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Setting: \"%s\" is not a valid setting for Option: %s. Check the option documentation.\n",
+                           buffer, tag.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -191,7 +184,7 @@ bool OptionsList::SetNumericValue(
          msg += "         The setting will remain as: \"" + tag;
          msg += " " + options_[lowercase(tag)].GetValue();
          msg += "\"\n";
-         jnlst_->Printf(J_WARNING, J_MAIN, msg.c_str());
+         jnlst_->Printf(J_WARNING, J_MAIN, "%s", msg.c_str());
       }
    }
    else
@@ -210,7 +203,7 @@ bool OptionsList::SetIntegerValue(
 )
 {
    char buffer[256];
-   Snprintf(buffer, 255, "%d", value);
+   Snprintf(buffer, 255, "%" IPOPT_INDEX_FORMAT, value);
 
    if( IsValid(reg_options_) )
    {
@@ -218,11 +211,10 @@ bool OptionsList::SetIntegerValue(
 
       if( IsNull(option) )
       {
-         std::string msg = "Tried to set Option: " + tag;
-         msg += ". It is not a valid option. Please check the list of available options.\n";
          if( IsValid(jnlst_) )
          {
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Tried to set Option: %s. It is not a valid option. Please check the list of available options.\n", tag.c_str());
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
          return false;
@@ -247,7 +239,7 @@ bool OptionsList::SetIntegerValue(
                msg += " Unknown";
             }
             msg += ", not of type Integer. Please check the documentation for options.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN, "%s", msg.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -258,12 +250,9 @@ bool OptionsList::SetIntegerValue(
       {
          if( IsValid(jnlst_) )
          {
-            std::string msg = "Setting: \"";
-            msg += buffer;
-            msg += "\" is not a valid setting for Option: ";
-            msg += tag;
-            msg += ". Check the option documentation.\n";
-            jnlst_->Printf(J_ERROR, J_MAIN, msg.c_str());
+            jnlst_->Printf(J_ERROR, J_MAIN,
+                           "Setting: \"%s\" is not a valid setting for Option: %s. Check the option documentation.\n",
+                           buffer, tag.c_str());
             option->OutputDescription(*jnlst_);
          }
          //THROW_EXCEPTION(OPTION_INVALID, msg);
@@ -282,7 +271,7 @@ bool OptionsList::SetIntegerValue(
          msg += "         The setting will remain as: \"" + tag;
          msg += " " + options_[lowercase(tag)].GetValue();
          msg += "\"\n";
-         jnlst_->Printf(J_WARNING, J_MAIN, msg.c_str());
+         jnlst_->Printf(J_WARNING, J_MAIN, "%s", msg.c_str());
       }
    }
    else
@@ -292,6 +281,27 @@ bool OptionsList::SetIntegerValue(
       options_[lowercase(tag)] = optval;
    }
    return true;
+}
+
+bool OptionsList::UnsetValue(
+   const std::string& tag
+)
+{
+   if( !will_allow_clobber(tag) )
+   {
+      if( IsValid(jnlst_) )
+      {
+         std::string msg = "WARNING: Tried to unset option \"" + tag;
+         msg += "\",\n         but the current value is set to disallow clobbering.\n";
+         msg += "         The setting will remain as: \"" + tag;
+         msg += " " + options_[lowercase(tag)].GetValue();
+         msg += "\"\n";
+         jnlst_->Printf(J_WARNING, J_MAIN, "%s", msg.c_str());
+      }
+      return false;
+   }
+
+   return options_.erase(lowercase(tag)) > 0;
 }
 
 bool OptionsList::SetStringValueIfUnset(
@@ -531,7 +541,7 @@ bool OptionsList::GetNumericValue(
       // numbers.  Therefore, we change a 'd' to an 'e'
       char* buffer = new char[strvalue.length() + 1];
       strcpy(buffer, strvalue.c_str());
-      for( int i = 0; i < (int) strvalue.length(); ++i )
+      for( size_t i = 0; i < strvalue.length(); ++i )
       {
          if( buffer[i] == 'd' || buffer[i] == 'D' )
          {
@@ -626,7 +636,7 @@ bool OptionsList::GetIntegerValue(
 }
 
 const std::string& OptionsList::lowercase(
-   const std::string tag
+   const std::string& tag
 ) const
 {
    lowercase_buffer_ = tag;
@@ -645,9 +655,9 @@ void OptionsList::PrintList(
    char buffer[256];
    Snprintf(buffer, 255, "%40s   %-20s %s\n", "Name", "Value", "# times used");
    list += buffer;
-   for( std::map<std::string, OptionValue>::const_iterator p = options_.begin(); p != options_.end(); p++ )
+   for( std::map<std::string, OptionValue>::const_iterator p = options_.begin(); p != options_.end(); ++p )
    {
-      Snprintf(buffer, 255, "%40s = %-20s %6d\n", p->first.c_str(), p->second.Value().c_str(), p->second.Counter());
+      Snprintf(buffer, 255, "%40s = %-20s %6" IPOPT_INDEX_FORMAT "\n", p->first.c_str(), p->second.Value().c_str(), p->second.Counter());
       list += buffer;
    }
 }
@@ -660,7 +670,7 @@ void OptionsList::PrintUserOptions(
    char buffer[256];
    Snprintf(buffer, 255, "%40s   %-20s %s\n", "Name", "Value", "used");
    list += buffer;
-   for( std::map<std::string, OptionValue>::const_iterator p = options_.begin(); p != options_.end(); p++ )
+   for( std::map<std::string, OptionValue>::const_iterator p = options_.begin(); p != options_.end(); ++p )
    {
       if( !p->second.DontPrint() )
       {
@@ -738,7 +748,7 @@ bool OptionsList::ReadFromStream(
             // point numbers.  Therefore, we change a 'd' to an 'e'
             char* buffer = new char[value.length() + 1];
             strcpy(buffer, value.c_str());
-            for( int i = 0; i < (int) value.length(); ++i )
+            for( size_t i = 0; i < value.length(); ++i )
             {
                if( buffer[i] == 'd' || buffer[i] == 'D' )
                {
@@ -848,7 +858,7 @@ bool OptionsList::readnexttoken(
 )
 {
    token.erase();
-   int c = is.get();
+   char c = is.get();
 
    // First get rid of all comments and white spaces
    while( !is.eof() && (isspace(c) || c == '#') )
